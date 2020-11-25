@@ -7,8 +7,8 @@ pip install pymcprotocol
 ```
 
 ## Protocol type
-Now, pymcprotocol supports mc only mcprotocol 3E type.  
-In the future, I`m going to support 4E type. (And if possible, 1C~4C type also.)]
+Now, pymcprotocol supports only mcprotocol 3E type.  
+In the future, I`m going to support 4E type. (And if possible, 1C~4C type too...)
 
 ## How to use mc protocol
 ### 1. Set up PLC
