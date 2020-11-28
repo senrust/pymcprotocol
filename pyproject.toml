@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "pymcprotocol"
+version = "0.1.0"
+description = "MC Protocol(MELSEC Communication Protocol) implementation by Python"
+license = "MIT"
+authors = ["Yohei Osawa <yohei.osawa.318.niko8@gmail.com>"]
+readme = "./README.md"
+repository = "https://github.com/yohei250r/pymcprotocol"
+keywords = ["Mistubishi", "PLC", "factory"]
+
+[tool.poetry.dependencies]
+python = "^3.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^3.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
