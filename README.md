@@ -19,12 +19,13 @@ First, you need to set upopen your PLC port to communicate by mcprotocol in Gxwo
 
 ### 2. Connect by Python
 ```python
-from pymcprotocol import Type3E
+import pymcprotocol
 
-pyplc = Type3E(ip="192.168.1.2", port=1025)
+pymc3e = pymcprotocol.Type3E()
 ```
 
 ### 3. Communicate
 ```python
-
+pymc3e.connect("192.168.1.2", 1025)
+pymc3e.close()
 ```
