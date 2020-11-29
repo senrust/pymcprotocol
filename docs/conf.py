@@ -20,8 +20,11 @@ project = 'pymcprotocol'
 copyright = '2020, Yohei Osawa'
 author = 'Yohei Osawa'
 
+with open("../src/pymcprotocol/__init__.py") as f:
+    version_line = f.readline()
+    version = version_line.strip().split(" ")[-1]
 # The full version, including alpha/beta/rc tags
-release = '0.1.0'
+release = version
 
 
 # -- General configuration ---------------------------------------------------
