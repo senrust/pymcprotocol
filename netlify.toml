@@ -1,4 +1,4 @@
 [build]
   base    = "docs"  
   publish = "docs/_build/html"  
-  command = " make html"  # ビルドコマンド
+  command = "sphinx-build  ./ _build/html/"
