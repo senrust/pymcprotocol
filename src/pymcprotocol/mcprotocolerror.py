@@ -1,19 +1,30 @@
 """This file is collection of mcprotocol error.
-First, define error constant. 
-Next, define Exception classes for each error.
-At last, define exception raiser.
+
 """
 
-RAT_ERROR = 10
+class MCProtocolError(Exception):
+    """devicecode error. Device is not exsist.
 
-class CommEroor(Exception):
-    pass
+    Attributes:
+        plctype(str):       PLC type. "Q", "L" or "iQ"
+        devicename(str):    devicename. (ex: "Q", "P", both of them does not support mcprotocol.)
+
+    """
+    def __init__(self, errorcode):
+        self.errorcode =  "0x" + format(errorcode, "x").rjust(4, "0").upper()
+
+    def __str__(self):
+        return "mc protocol error: error code {}".format(self.errorcode)
+
     
-class MCProtocolError():
-    
-    @staticmethod
-    def RaiseMCProtocolError(error_code):
-        if error_code is RAT_ERROR:
-            raise CommEroor()
+def check_mcprotocol_error(status):
+    """Check mc protocol command error.
+    If errot exist(status != 0), raise Error.
+
+    """
+    if status == 0:
+        return None
+    else:
+        raise MCProtocolError(status)
 
         

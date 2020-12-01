@@ -2,3 +2,5 @@
 poetry.lock
 *.pyc
 docs/_build/*
+*.ipynb
+.vscode
