@@ -287,20 +287,31 @@ class Type3E:
                 device_data += format(devicenum).rjust(6, "0").upper().encode()
         return device_data
 
-    def make_valuedata(self, value):
+    def make_valuedata(self, value, mode="short"):
         """make mc protocol value data.
 
-        Args: value(int):   readsize, write value, and so on.
-
+        Args: 
+            value(int):   readsize, write value, and so on.
+            mode(str):    value type.
         Returns:
             value_data(bytes):  value data
         
         """
         value_data = bytes()
         if self.commtype == const.COMMTYPE_BINARY:
-            value_data += value.to_bytes(2, "little")
+            if mode == "byte":
+                value_data += value.to_bytes(1, "little")
+            elif mode == "short":
+                value_data += value.to_bytes(2, "little")
+            elif mode == "long":
+                value_data += value.to_bytes(4, "little")
         else:
-            value_data += format(value, "x").rjust(4, "0").upper().encode()
+            if mode == "byte":
+                value_data += format(value, "x").rjust(2, "0").upper().encode()
+            elif mode == "short":
+                value_data += format(value, "x").rjust(4, "0").upper().encode()
+            elif mode == "long":
+                value_data += format(value, "x").rjust(8, "0").upper().encode()
         return value_data
         
     def check_cmdanswer(self, recv_data):
@@ -346,20 +357,22 @@ class Type3E:
         self._recv_data = recv_data
         self.check_cmdanswer(recv_data)
 
-        wordunits_values = []
+        word_values = []
         if self.commtype == const.COMMTYPE_BINARY:
             data_index = 11
             data_range = 2
             for i in range(readsize):
-                wordvalue = int.from_bytes(recv_data[data_index+i*data_range:data_index+i*data_range+data_range], "little")
-                wordunits_values.append(wordvalue)
+                wordvalue = int.from_bytes(recv_data[data_index:data_index+data_range], "little")
+                word_values.append(wordvalue)
+                data_index += data_range
         else:
             data_index = 22
             data_range = 4
             for i in range(readsize):
-                wordvalue = int(recv_data[data_index+i*data_range:data_index+i*data_range+data_range].decode(), 16)
-                wordunits_values.append(wordvalue)
-        return wordunits_values
+                wordvalue = int(recv_data[data_index:data_index+data_range].decode(), 16)
+                word_values.append(wordvalue)
+                data_index += data_range
+        return word_values
 
     def batchread_bitunits(self, headdevice, readsize):
         """batch read in bit units.
@@ -394,7 +407,7 @@ class Type3E:
 
         self.check_cmdanswer(recv_data)
 
-        bitunits_values = []
+        bit_values = []
         if self.commtype == const.COMMTYPE_BINARY:
             for i in range(readsize):
                 data_index = i//2 + 11
@@ -404,17 +417,18 @@ class Type3E:
                     bitvalue = 1 if value & (1<<4) else 0
                 else:
                     bitvalue = 1 if value & (1<<0) else 0
-                bitunits_values.append(bitvalue)
+                bit_values.append(bitvalue)
         else:
             data_index = 22
             byte_range = 1
             for i in range(readsize):
-                bitvalue = int(recv_data[data_index+i:data_index+i+byte_range].decode())
-                bitunits_values.append(bitvalue)
-        return bitunits_values
+                bitvalue = int(recv_data[data_index:data_index+byte_range].decode())
+                bit_values.append(bitvalue)
+                data_index += byte_range
+        return bit_values
 
     def batchwrite_wordunits(self, headdevice, values):
-        """batch read in word units.
+        """batch write in word units.
 
         Args:
             headdevice(str):    Write head device. (ex: "D1000")
@@ -503,10 +517,163 @@ class Type3E:
 
         return None
 
+    def randomread(self, word_devices, dword_devices):
+        """read word units and dword units randomly.
+        Moniter condition does not support.
 
- 
+        Args:
+            word_devices(list[str]):    Read device word units. (ex: ["D1000", "D1010"])
+            dword_devices(list[str]):   Read device dword units. (ex: ["D1000", "D1012"])
 
+        Returns:
+            word_values(list[int]):     word units value list
+            dword_values(list[int]):    dword units value list
+
+        """
+        self.currentcmd = const.RANDOMREAD
+        command = 0x0403
+        if self.plctype == const.iQ_SERIES:
+            subcommand = 0x0002
+        else:
+            subcommand = 0x0000
+
+        word_size = len(word_devices)
+        dword_size = len(dword_devices)
+        
+        request_data = bytes()
+        request_data += self.make_commanddata(command, subcommand)
+        request_data += self.make_valuedata(word_size, mode="byte")
+        request_data += self.make_valuedata(dword_size, mode="byte")
+        for word_device in word_devices:
+            request_data += self.make_devicedata(word_device)
+        for dword_device in dword_devices:
+            request_data += self.make_devicedata(dword_device)        
+        send_data = self.make_senddata(request_data)
+
+        #send mc data
+        self.send(send_data)
+        self._send_data = send_data
+        #reciev mc data
+        recv_data = self.recv()
+        self._recv_data = recv_data
+        self.check_cmdanswer(recv_data)
+
+        word_values = []
+        dword_values = []
+        if self.commtype == const.COMMTYPE_BINARY:
+            data_index = 11
+            data_range = 2
+            for i in range(word_size):
+                wordvalue = int.from_bytes(recv_data[data_index:data_index+data_range], "little")
+                word_values.append(wordvalue)
+                data_index += data_range
+            data_range = 4
+            for i in range(dword_size):
+                dwordvalue = int.from_bytes(recv_data[data_index:data_index+data_range], "little")
+                dword_values.append(dwordvalue)
+                data_index += data_range
+        else:
+            data_index = 22
+            data_range = 4
+            for i in range(word_size):
+                wordvalue = int(recv_data[data_index:data_index+data_range].decode(), 16)
+                word_values.append(wordvalue)
+                data_index += data_range
+            data_range = 8
+            for i in range(dword_size):
+                dwordvalue = int(recv_data[data_index:data_index+data_range].decode(), 16)
+                dword_values.append(dwordvalue)
+                data_index += data_range
+        return word_values, dword_values
+
+    def randomwrite(self, word_devices, word_values, dword_devices, dword_values):
+        """write word units and dword units randomly.
+
+        Args:
+            word_devices(list[str]):    Write word devices. (ex: ["D1000", "D1020"])
+            word_values(list[int]):     Values for each word devices. (ex: [100, 200])
+            dword_devices(list[str]):   Write dword devices. (ex: ["D1000", "D1020"])
+            dword_values(list[int]):    Values for each dword devices. (ex: [100, 200])
+
+        """
+        if len(word_devices) != len(word_values):
+            raise ValueError("word_devices and word_values must be same length")
+        if len(dword_devices) != len(dword_values):
+            raise ValueError("dword_devices and dword_values must be same length")
             
+        word_size = len(word_devices)
+        dword_size = len(dword_devices)
+
+        self.currentcmd = const.RANDOMWRITE
+        command = 0x1402
+        if self.plctype == const.iQ_SERIES:
+            subcommand = 0x0002
+        else:
+            subcommand = 0x0000
+        
+        request_data = bytes()
+        request_data += self.make_commanddata(command, subcommand)
+        request_data += self.make_valuedata(word_size, mode="byte")
+        request_data += self.make_valuedata(dword_size, mode="byte")
+        for word_device, word_value in zip(word_devices, word_values):
+            request_data += self.make_devicedata(word_device)
+            request_data += self.make_valuedata(word_value)
+        for dword_device, dword_value in zip(dword_devices, dword_values):
+            request_data += self.make_devicedata(dword_device)   
+            request_data += self.make_valuedata(dword_value, mode="long")     
+        send_data = self.make_senddata(request_data)
+
+        #send mc data
+        self.send(send_data)
+        self._send_data = send_data
+        #reciev mc data
+        recv_data = self.recv()
+        self._recv_data = recv_data
+        self.check_cmdanswer(recv_data)
+
+        return None
+
+    def randomwrite_bitunits(self, bit_devices, values):
+        """write bit units randomly.
+
+        Args:
+            bit_devices(list[str]):    Write bit devices. (ex: ["X10", "X20"])
+            values(list[int]):         Write values. each value must be 0 or 1. 0 is OFF, 1 is ON.
+
+        """
+        if len(bit_devices) != len(values):
+            raise ValueError("bit_devices and values must be same length")
+        write_size = len(values)
+        #check values
+        for value in values:
+            if not (value == 0 or value == 1): 
+                raise ValueError("Each value must be 0 or 1. 0 is OFF, 1 is ON.")
+
+        self.currentcmd = const.RANDOMWRITE_BITUNITS
+        command = 0x1402
+        if self.plctype == const.iQ_SERIES:
+            subcommand = 0x0003
+        else:
+            subcommand = 0x0001
+        
+        request_data = bytes()
+        request_data += self.make_commanddata(command, subcommand)
+        request_data += self.make_valuedata(write_size, mode="byte")
+        for bit_device, value in zip(bit_devices, values):
+            request_data += self.make_devicedata(bit_device)
+            request_data += self.make_valuedata(value, mode="byte")
+        send_data = self.make_senddata(request_data)
+                    
+        #send mc data
+        self.send(send_data)
+        self._send_data = send_data
+        #reciev mc data
+        recv_data = self.recv()
+        self._recv_data = recv_data
+        self.check_cmdanswer(recv_data)
+
+        return None
+
 
 
 
