@@ -314,12 +314,12 @@ class Type3E:
             answer_status = int(answer_status_str, 16)
         mcprotocolerror.check_mcprotocol_error(answer_status)
 
-    def batchread_wordunits(self, headdevice, size):
+    def batchread_wordunits(self, headdevice, readsize):
         """batch read in word units.
 
         Args:
             headdevice(str):    Read head device. (ex: "D1000")
-            size(int):          Number of device points
+            readsize(int):      Number of read device points
 
         Returns:
             wordunits_values(list[int]):  word units value list
@@ -335,7 +335,7 @@ class Type3E:
         request_data = bytes()
         request_data += self.make_commanddata(command, subcommand)
         request_data += self.make_devicedata(headdevice)
-        request_data += self.make_valuedata(size)
+        request_data += self.make_valuedata(readsize)
         send_data = self.make_senddata(request_data)
 
         #send mc data
@@ -350,23 +350,23 @@ class Type3E:
         if self.commtype == const.COMMTYPE_BINARY:
             data_index = 11
             data_range = 2
-            for i in range(size):
+            for i in range(readsize):
                 wordvalue = int.from_bytes(recv_data[data_index+i*data_range:data_index+i*data_range+data_range], "little")
                 wordunits_values.append(wordvalue)
         else:
             data_index = 22
             data_range = 4
-            for i in range(size):
+            for i in range(readsize):
                 wordvalue = int(recv_data[data_index+i*data_range:data_index+i*data_range+data_range].decode(), 16)
                 wordunits_values.append(wordvalue)
         return wordunits_values
 
-    def batchread_bitunits(self, headdevice, size):
+    def batchread_bitunits(self, headdevice, readsize):
         """batch read in bit units.
 
         Args:
             headdevice(str):    Read head device. (ex: "X1")
-            size(int):          Number ofdevice points
+            size(int):          Number of read device points
 
         Returns:
             bitunits_values(list[int]):  bit units value(0 or 1) list
@@ -382,7 +382,7 @@ class Type3E:
         request_data = bytes()
         request_data += self.make_commanddata(command, subcommand)
         request_data += self.make_devicedata(headdevice)
-        request_data += self.make_valuedata(size)
+        request_data += self.make_valuedata(readsize)
         send_data = self.make_senddata(request_data)
 
         #send mc data
@@ -396,7 +396,7 @@ class Type3E:
 
         bitunits_values = []
         if self.commtype == const.COMMTYPE_BINARY:
-            for i in range(size):
+            for i in range(readsize):
                 data_index = i//2 + 11
                 value = int.from_bytes(recv_data[data_index:data_index+1], "little")
                 #if i//2==0, bit value is 4th bit
@@ -408,10 +408,101 @@ class Type3E:
         else:
             data_index = 22
             byte_range = 1
-            for i in range(size):
+            for i in range(readsize):
                 bitvalue = int(recv_data[data_index+i:data_index+i+byte_range].decode())
                 bitunits_values.append(bitvalue)
         return bitunits_values
+
+    def batchwrite_wordunits(self, headdevice, values):
+        """batch read in word units.
+
+        Args:
+            headdevice(str):    Write head device. (ex: "D1000")
+            values(list[int]):  Write values.
+
+        """
+        write_size = len(values)
+
+        self.currentcmd = const.BATCHWRITE_WORDUNITS
+        command = 0x1401
+        if self.plctype == const.iQ_SERIES:
+            subcommand = 0x0002
+        else:
+            subcommand = 0x0000
+        
+        request_data = bytes()
+        request_data += self.make_commanddata(command, subcommand)
+        request_data += self.make_devicedata(headdevice)
+        request_data += self.make_valuedata(write_size)
+        for value in values:
+            request_data += self.make_valuedata(value)
+        send_data = self.make_senddata(request_data)
+
+        #send mc data
+        self.send(send_data)
+        self._send_data = send_data
+        #reciev mc data
+        recv_data = self.recv()
+        self._recv_data = recv_data
+        self.check_cmdanswer(recv_data)
+
+        return None
+
+    def batchwrite_bitunits(self, headdevice, values):
+        """batch read in bit units.
+
+        Args:
+            headdevice(str):    Write head device. (ex: "X10")
+            values(list[int]):  Write values. each value must be 0 or 1. 0 is OFF, 1 is ON.
+
+        """
+        write_size = len(values)
+        #check values
+        for value in values:
+            if not (value == 0 or value == 1): 
+                raise ValueError("Each value must be 0 or 1. 0 is OFF, 1 is ON.")
+
+        self.currentcmd = const.BATCHWRITE_BITUNITS
+        command = 0x1401
+        if self.plctype == const.iQ_SERIES:
+            subcommand = 0x0003
+        else:
+            subcommand = 0x0001
+        
+        request_data = bytes()
+        request_data += self.make_commanddata(command, subcommand)
+        request_data += self.make_devicedata(headdevice)
+        request_data += self.make_valuedata(write_size)
+        if self.commtype == const.COMMTYPE_BINARY:
+            #evary value is 0 or 1.
+            #Even index's value turns on or off 4th bit, odd index's value turns on or off 0th bit.
+            #First, create send data list. Length must be ceil of len(values).
+            bit_data = [0 for _ in range((len(values) + 1)//2)]
+            for index, value in enumerate(values):
+                #calc which index data should be turns on.
+                value_index = index//2
+                #calc which bit should be turns on.
+                bit_index = 4 if index%2 == 0 else 0
+                #turns on or off value of 4th or 0th bit, depends on value
+                bit_value = value << bit_index
+                #Take or of send data
+                bit_data[value_index] |= bit_value
+            request_data += bytes(bit_data)
+        else:
+            for value in values:
+                request_data += str(value).encode()
+        send_data = self.make_senddata(request_data)
+                    
+        #send mc data
+        self.send(send_data)
+        self._send_data = send_data
+        #reciev mc data
+        recv_data = self.recv()
+        self._recv_data = recv_data
+        self.check_cmdanswer(recv_data)
+
+        return None
+
 
  
 

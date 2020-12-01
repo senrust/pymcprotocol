@@ -56,10 +56,16 @@ You need to set upopen your PLC port to communicate by mcprotocol in Gxworks2 or
 .. code-block:: python
 
    #read from D100 to D110
-   pymc3e.batchread_wordunits(headdevice="D100", size=10)
+   pymc3e.batchread_wordunits(headdevice="D100", readsize=10)
 
    #read from X10 to X20
-   pymc3e.batchread_bitunits(headdevice="X10", size=10)
+   pymc3e.batchread_bitunits(headdevice="X10", readsize=10)
+
+   #write from D10 to D15
+   pymc3e.batchread_wordunits(headdevice="D10", values=[0, 10, 20, 30, 40])
+
+   #write from Y10 to Y15
+   pymc3e.batchread_bitunits(headdevice="Y10", values=[0, 1, 0, 1, 0])
    
    pymc3e.close()
 
