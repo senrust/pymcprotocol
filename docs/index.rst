@@ -21,7 +21,19 @@ Installation
 Protocol type
 ==================================
 Now, pymcprotocol supports only mcprotocol 3E type.
-In the future, support 4E type. (And if possible, 1C~4C type too...)
+4E type is implemented. But not tested.
+1C~4C type does not suuport.
+
+Support PLC series
+==================================
+- Q Series
+- L Series
+- QnA Series
+- iQ-L Series
+- iQ-R Series
+
+A series does not support 3E or 4E type communication.  
+So you cannot use. 
 
 How to use pymcprotocol
 ==================================
@@ -44,8 +56,15 @@ You need to set upopen your PLC port to communicate by mcprotocol in Gxworks2 or
    pymc3e = pymcprotocol.Type3E()
    #if you use L series PLC,
    pymc3e = pymcprotocol.Type3E(plctype="L")
-   #if you use iQ series PLC,
-   pymc3e = pymcprotocol.Type3E(plctype="iQ")
+   #if you use QnA series PLC,
+   pymc3e = pymcprotocol.Type3E(plctype="L")
+   #if you use iQ-L series PLC,
+   pymc3e = pymcprotocol.Type3E(plctype="iQ-L")
+   #if you use iQ-R series PLC,
+   pymc3e = pymcprotocol.Type3E(plctype="iQ-R")
+
+   #If you use 4E type
+   pymc4e = pymcprotocol.Type4E()
 
    #If you use ascii byte communication. (default is "binary")
    pymc3e.setaccessopt(commtype="ascii")
