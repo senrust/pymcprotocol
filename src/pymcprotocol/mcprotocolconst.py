@@ -1,9 +1,11 @@
 """This file defines mcprotocol constant.
 """
 #PLC definetion
-Q_SERIES  = "Q"
-L_SERIES  = "L"
-iQ_SERIES = "iQ"
+Q_SERIES    = "Q"
+L_SERIES    = "L"
+QnA_SERIES  = "QnA"
+iQL_SERIES  = "iQ-L"
+iQR_SERIES  = "iQ-R"
 
 #command definition
 BATCHREAD_WORDUNITS     = 1
@@ -22,7 +24,7 @@ class DeviceCodeError(Exception):
     """devicecode error. Device is not exsist.
 
     Attributes:
-        plctype(str):       PLC type. "Q", "L" or "iQ"
+        plctype(str):       PLC type. "Q", "L", "QnA", "iQ-L", "iQ-R", 
         devicename(str):    devicename. (ex: "Q", "P", both of them does not support mcprotocol.)
 
     """
@@ -40,7 +42,7 @@ class DeviceConstants:
         D_DEVICE(int):  D devide code (0xA8)
 
     """
-    #These device supports "Q", "L", "iQ"
+    #These device supports all series
     SM_DEVICE = 0x91
     SD_DEVICE = 0xA9
     X_DEVICE  = 0x9C
@@ -68,7 +70,7 @@ class DeviceConstants:
     R_DEVICE  = 0xAF
     ZR_DEVICE = 0xB0
 
-    #These device supports only "iQ" series
+    #These device supports only "iQ-R" series
     LTS_DEVICE  = 0x51
     LTC_DEVICE  = 0x50
     LTN_DEVICE  = 0x52
@@ -92,7 +94,7 @@ class DeviceConstants:
         """Static method that returns devicecode from device name.
 
         Args:
-            plctype(str):       PLC type. "Q", "L" or "iQ"
+            plctype(str):       PLC type. "Q", "L", "QnA", "iQ-L", "iQ-R"
             devicename(str):    Device name. (ex: "D", "X", "Y")
 
         Returns:
@@ -151,25 +153,25 @@ class DeviceConstants:
             return DeviceConstants.R_DEVICE
         elif devicename == "ZR":
             return DeviceConstants.ZR_DEVICE
-        elif (devicename == "LTS") and (plctype == iQ_SERIES):
+        elif (devicename == "LTS") and (plctype == iQR_SERIES):
             return DeviceConstants.LTS_DEVICE
-        elif (devicename == "LTC") and (plctype == iQ_SERIES):
+        elif (devicename == "LTC") and (plctype == iQR_SERIES):
             return DeviceConstants.LTC_DEVICE
-        elif (devicename == "LTN") and (plctype == iQ_SERIES):
+        elif (devicename == "LTN") and (plctype == iQR_SERIES):
             return DeviceConstants.LTN_DEVICE
-        elif (devicename == "LSTS") and (plctype == iQ_SERIES):
+        elif (devicename == "LSTS") and (plctype == iQR_SERIES):
             return DeviceConstants.LSTS_DEVICE
-        elif (devicename == "LSTN") and (plctype == iQ_SERIES):
+        elif (devicename == "LSTN") and (plctype == iQR_SERIES):
             return DeviceConstants.LSTN_DEVICE
-        elif (devicename == "LCS") and (plctype == iQ_SERIES):
+        elif (devicename == "LCS") and (plctype == iQR_SERIES):
             return DeviceConstants.LCS_DEVICE
-        elif (devicename == "LCC") and (plctype == iQ_SERIES):
+        elif (devicename == "LCC") and (plctype == iQR_SERIES):
             return DeviceConstants.LCC_DEVICE
-        elif (devicename == "LCN") and (plctype == iQ_SERIES):
+        elif (devicename == "LCN") and (plctype == iQR_SERIES):
             return DeviceConstants.LCN_DEVICE
-        elif (devicename == "LZ") and (plctype == iQ_SERIES):
+        elif (devicename == "LZ") and (plctype == iQR_SERIES):
             return DeviceConstants.LZ_DEVICE
-        elif (devicename == "RD") and (plctype == iQ_SERIES):
+        elif (devicename == "RD") and (plctype == iQR_SERIES):
             return DeviceConstants.RD_DEVICE
         else:
             raise DeviceCodeError(plctype, devicename)
@@ -179,14 +181,14 @@ class DeviceConstants:
         """Static method that returns devicecode from device name.
 
         Args:
-            plctype(str):       PLC type. "Q", "L" or "iQ"
+            plctype(str):       PLC type. "Q", "L", "QnA", "iQ-L", "iQ-R"
             devicename(str):    Device name. (ex: "D", "X", "Y")
 
         Returns:
             devicecode(int):    Device code defined mc protocol (ex: "D" → "D*")
         
         """
-        if plctype == iQ_SERIES:
+        if plctype == iQR_SERIES:
             padding = 4
         else:
             padding = 2
@@ -242,25 +244,25 @@ class DeviceConstants:
             return devicename.ljust(padding, "*")
         elif devicename == "ZR":
             return devicename.ljust(padding, "*")
-        elif (devicename == "LTS") and (plctype == iQ_SERIES):
+        elif (devicename == "LTS") and (plctype == iQR_SERIES):
             return devicename.ljust(padding, "*")
-        elif (devicename == "LTC") and (plctype == iQ_SERIES):
+        elif (devicename == "LTC") and (plctype == iQR_SERIES):
             return devicename.ljust(padding, "*")
-        elif (devicename == "LTN") and (plctype == iQ_SERIES):
+        elif (devicename == "LTN") and (plctype == iQR_SERIES):
             return devicename.ljust(padding, "*")
-        elif (devicename == "LSTS") and (plctype == iQ_SERIES):
+        elif (devicename == "LSTS") and (plctype == iQR_SERIES):
             return devicename.ljust(padding, "*")
-        elif (devicename == "LSTN") and (plctype == iQ_SERIES):
+        elif (devicename == "LSTN") and (plctype == iQR_SERIES):
             return devicename.ljust(padding, "*")
-        elif (devicename == "LCS") and (plctype == iQ_SERIES):
+        elif (devicename == "LCS") and (plctype == iQR_SERIES):
             return devicename.ljust(padding, "*")
-        elif (devicename == "LCC") and (plctype == iQ_SERIES):
+        elif (devicename == "LCC") and (plctype == iQR_SERIES):
             return devicename.ljust(padding, "*")
-        elif (devicename == "LCN") and (plctype == iQ_SERIES):
+        elif (devicename == "LCN") and (plctype == iQR_SERIES):
             return devicename.ljust(padding, "*")
-        elif (devicename == "LZ") and (plctype == iQ_SERIES):
+        elif (devicename == "LZ") and (plctype == iQR_SERIES):
             return devicename.ljust(padding, "*")
-        elif (devicename == "RD") and (plctype == iQ_SERIES):
+        elif (devicename == "RD") and (plctype == iQR_SERIES):
             return devicename.ljust(padding, "*")
         else:
             raise DeviceCodeError(plctype, devicename)

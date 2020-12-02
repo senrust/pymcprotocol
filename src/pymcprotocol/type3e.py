@@ -17,20 +17,20 @@ class CommTypeError(Exception):
         return "communication type must be \"binary\" or \"ascii\""
 
 class PLCTypeError(Exception):
-    """PLC type error. PLC type must be "Q", "L" or "iQ"
+    """PLC type error. PLC type must be"Q", "L", "QnA", "iQ-L", "iQ-R"
 
     """
     def __init__(self):
         pass
 
     def __str__(self):
-        return "plctype must be \"Q\", \"L\" or \"iQ\""
+        return "plctype must be \"Q\", \"L\", \"QnA\" \"iQ-L\" or \"iQ-R\""
 
 class Type3E:
-    """mcprotocol 3E binary type communication class.
+    """mcprotocol 3E communication class.
 
     Attributes:
-        plctype(str):           connect PLC type. "Q", "L" r "iQ"
+        plctype(str):           connect PLC type. "Q", "L", "QnA", "iQ-L", "iQ-R"
         commtype(str):          communication type. "binary" or "ascii". (Default: "binary") 
         subheader(int):         Subheader for mc protocol
         network(int):           network No. of an access target. (0<= network <= 255)
@@ -42,7 +42,6 @@ class Type3E:
                                 specify the station No. of aaccess target module
 
     """
-    _is_connected   = False
     plctype         = const.Q_SERIES
     commtype        = const.COMMTYPE_BINARY
     subheader       = 0x50
@@ -52,8 +51,10 @@ class Type3E:
     dest_modulesta  = 0X0
     timer           = 0
     _sock           = None
+    _is_connected   = False
     _SOCKBUFSIZE    = 4096
     _currentcmd     = None
+    _zerovalue = 0x0000
 
 
     def __init__(self, plctype="Q"):
@@ -77,6 +78,7 @@ class Type3E:
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._sock.connect((ip, port))
         self._sock.settimeout(timeout)
+        self._timeout = timeout
         self._is_connected = True
 
     def close(self):
@@ -129,15 +131,19 @@ class Type3E:
         """Check PLC type. If plctype is vaild, set self.commtype.
 
         Args:
-            plctype(str):      plc type. "Q", "L" or "iQ". (Default: "Q") 
+            plctype(str):      PLC type. "Q", "L", "QnA", "iQ-L", "iQ-R", 
 
         """
         if plctype == "Q":
             self.plctype = const.Q_SERIES
         elif plctype == "L":
             self.plctype = const.L_SERIES
-        elif plctype == "iQ":
-            self.plctype = const.iQ_SERIES
+        elif plctype == "QnA":
+            self.plctype = const.QnA_SERIES
+        elif plctype == "iQ-L":
+            self.plctype = const.iQL_SERIES
+        elif plctype == "iQ-R":
+            self.plctype = const.iQR_SERIES
         else:
             raise PLCTypeError()
 
@@ -175,23 +181,28 @@ class Type3E:
         if network:
             if(0 <= network <= 255):
                 self.network = network
-            raise ValueError("network must be 0 <= network <= 255")
+            else:
+                raise ValueError("network must be 0 <= network <= 255")
         if pc:
             if(0 <= pc <= 255):
                 self.pc = pc
-            raise ValueError("network must be 0 <= pc <= 255") 
+            else:
+                raise ValueError("network must be 0 <= pc <= 255") 
         if dest_moduleio:
             if(0 <= dest_moduleio <= 65535):
                 self.dest_moduleio = dest_moduleio
-            raise ValueError("dest_moduleio must be 0 <= dest_moduleio <= 65535") 
+            else:
+                raise ValueError("dest_moduleio must be 0 <= dest_moduleio <= 65535") 
         if dest_modulesta:
             if(0 <= dest_modulesta <= 255):
                 self.dest_modulesta = dest_modulesta
-            raise ValueError("network must be 0 <= dest_modulesta <= 255") 
+            else:
+                raise ValueError("network must be 0 <= dest_modulesta <= 255") 
         if timer:
             if(0 <= timer <= 65535):
                 self.timer = timer
-            raise ValueError("network must be 0 <= timer <= 65535, / 250msec") 
+            else:
+                raise ValueError("network must be 0 <= timer <= 65535, / 250msec") 
         return None
     
     def _make_senddata(self, requestdata):
@@ -266,7 +277,7 @@ class Type3E:
         device_data = bytes()
         if self.commtype is const.COMMTYPE_BINARY:
             devicecode, devicenum = self._interpret_device(device)
-            if self.plctype is const.iQ_SERIES:
+            if self.plctype is const.iQR_SERIES:
                 device_data += devicenum.to_bytes(4, "little")
                 device_data += devicecode.to_bytes(2, "little")
             else:
@@ -274,7 +285,7 @@ class Type3E:
                 device_data += devicecode.to_bytes(1, "little")
         else:
             devicecode, devicenum = self._interpret_device(device)
-            if self.plctype is const.iQ_SERIES:
+            if self.plctype is const.iQR_SERIES:
                 device_data += devicecode.encode()
                 device_data += format(devicenum).rjust(8, "0").upper().encode()
 
@@ -334,7 +345,7 @@ class Type3E:
         """
         self._currentcmd = const.BATCHREAD_WORDUNITS
         command = 0x0401
-        if self.plctype == const.iQ_SERIES:
+        if self.plctype == const.iQR_SERIES:
             subcommand = 0x0002
         else:
             subcommand = 0x0000
@@ -383,7 +394,7 @@ class Type3E:
         """
         self._currentcmd = const.BATCHREAD_BITUNITS
         command = 0x0401
-        if self.plctype == const.iQ_SERIES:
+        if self.plctype == const.iQR_SERIES:
             subcommand = 0x0003
         else:
             subcommand = 0x0001
@@ -435,7 +446,7 @@ class Type3E:
 
         self._currentcmd = const.BATCHWRITE_WORDUNITS
         command = 0x1401
-        if self.plctype == const.iQ_SERIES:
+        if self.plctype == const.iQR_SERIES:
             subcommand = 0x0002
         else:
             subcommand = 0x0000
@@ -474,7 +485,7 @@ class Type3E:
 
         self._currentcmd = const.BATCHWRITE_BITUNITS
         command = 0x1401
-        if self.plctype == const.iQ_SERIES:
+        if self.plctype == const.iQR_SERIES:
             subcommand = 0x0003
         else:
             subcommand = 0x0001
@@ -528,7 +539,7 @@ class Type3E:
         """
         self._currentcmd = const.RANDOMREAD
         command = 0x0403
-        if self.plctype == const.iQ_SERIES:
+        if self.plctype == const.iQR_SERIES:
             subcommand = 0x0002
         else:
             subcommand = 0x0000
@@ -602,7 +613,7 @@ class Type3E:
 
         self._currentcmd = const.RANDOMWRITE
         command = 0x1402
-        if self.plctype == const.iQ_SERIES:
+        if self.plctype == const.iQR_SERIES:
             subcommand = 0x0002
         else:
             subcommand = 0x0000
@@ -647,7 +658,7 @@ class Type3E:
 
         self._currentcmd = const.RANDOMWRITE_BITUNITS
         command = 0x1402
-        if self.plctype == const.iQ_SERIES:
+        if self.plctype == const.iQR_SERIES:
             subcommand = 0x0003
         else:
             subcommand = 0x0001
@@ -670,6 +681,146 @@ class Type3E:
 
         return None
 
+    def remote_run(self, clear_mode, force_exec=False):
+        """Run PLC
+
+        Args:
+            clear_mode(int):     Clear mode. 0: does not clear. 1: clear except latch device. 2: clear all.
+            force_exec(bool):    Force to execute if PLC is operated remotely by other device.
+
+        """
+        if not (clear_mode == 0 or  clear_mode == 1 or clear_mode == 2):
+            raise ValueError("clear_device must be 0, 1 or 2. 0: does not clear. 1: clear except latch device. 2: clear all.")
+        if not (force_exec is True or force_exec is False):
+            raise ValueError("force_exec must be True or False")
+
+        command = 0x1001
+        subcommand = 0x0000
+
+        if force_exec:
+            mode = 0x0003
+        else:
+            mode = 0x0001
+          
+        request_data = bytes()
+        request_data += self._make_commanddata(command, subcommand)
+        request_data += self._make_valuedata(mode, mode="short")
+        request_data += self._make_valuedata(clear_mode, mode="byte")
+        request_data += self._make_valuedata(self._zerovalue, mode="byte")
+        send_data = self._make_senddata(request_data)
+
+        #send mc data
+        self._send(send_data)
+        self._send_data = send_data
+        #reciev mc data
+        recv_data = self._recv()
+        self._recv_data = recv_data
+        self._check_cmdanswer(recv_data)
+        return None
+
+    def remote_stop(self):
+        """ Stop remotely.
+
+        """
+        command = 0x1002
+        subcommand = 0x0000
+
+        request_data = bytes()
+        request_data += self._make_commanddata(command, subcommand)
+        request_data += self._make_valuedata(0x0001, mode="short") #fixed value
+        send_data = self._make_senddata(request_data)
+
+        #send mc data
+        self._send(send_data)
+        self._send_data = send_data
+        #reciev mc data
+        recv_data = self._recv()
+        self._recv_data = recv_data
+        self._check_cmdanswer(recv_data)
+        return None
+
+    def remote_pause(self, force_exec=False):
+        """pause PLC remotely.
+
+        Args:
+            force_exec(bool):    Force to execute if PLC is operated remotely by other device.
+
+        """
+        if not (force_exec is True or force_exec is False):
+            raise ValueError("force_exec must be True or False")
+
+        command = 0x1003
+        subcommand = 0x0000
+
+        if force_exec:
+            mode = 0x0003
+        else:
+            mode = 0x0001
+          
+        request_data = bytes()
+        request_data += self._make_commanddata(command, subcommand)
+        request_data += self._make_valuedata(mode, mode="short")
+        send_data = self._make_senddata(request_data)
+
+        #send mc data
+        self._send(send_data)
+        self._send_data = send_data
+        #reciev mc data
+        recv_data = self._recv()
+        self._recv_data = recv_data
+        self._check_cmdanswer(recv_data)
+        return None
+
+    def remote_latchclear(self):
+        """Clear latch remotely.
+        PLC must be stop when use this command.
+        """
+
+        command = 0x1005
+        subcommand = 0x0000
+
+        request_data = bytes()
+        request_data += self._make_commanddata(command, subcommand)
+        request_data += self._make_valuedata(0x0001, mode="short") #fixed value 
+        send_data = self._make_senddata(request_data)
+
+        #send mc data
+        self._send(send_data)
+        self._send_data = send_data
+        #reciev mc data
+        recv_data = self._recv()
+        self._recv_data = recv_data
+        self._check_cmdanswer(recv_data)
+
+        return None
+
+    def remote_reset(self):
+        """Reset remotely.
+        PLC must be stop when use this command.
+        """
+
+        command = 0x1006
+        subcommand = 0x0000
+
+        request_data = bytes()
+        request_data += self._make_commanddata(command, subcommand)
+        request_data += self._make_valuedata(0x0001, mode="short") #fixed value
+        send_data = self._make_senddata(request_data)
+
+        #send mc data
+        self._send(send_data)
+        self._send_data = send_data
+        #reciev mc data
+        #set time out 1 seconds. Because remote reset may not return data
+        self._sock.settimeout(1)
+        try:
+            recv_data = self._recv()
+            self._recv_data = recv_data
+            self._check_cmdanswer(recv_data)
+        except:
+            pass
+        self._sock.settimeout(self._timeout)
+        return None
 
 
 

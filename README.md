@@ -8,7 +8,18 @@ pip install pymcprotocol
 
 ## Protocol type
 Now, pymcprotocol supports only mcprotocol 3E type.
-In the future, support 4E type. (And if possible, 1C~4C type too...)
+4E type is implemented. But not tested.
+1C~4C type does not suuport.
+
+## Support PLC series
+- Q Series
+- L Series
+- QnA Series
+- iQ-L Series
+- iQ-R Series
+
+A series does not support 3E or 4E type.  
+So you cannot communicate. 
 
 ## How to use mc protocol
 ### 1. Set up PLC
@@ -25,8 +36,15 @@ import pymcprotocol
 pymc3e = pymcprotocol.Type3E()
 #if you use L series PLC,
 pymc3e = pymcprotocol.Type3E(plctype="L")
-#if you use iQ series PLC,
-pymc3e = pymcprotocol.Type3E(plctype="iQ")
+#if you use QnA series PLC,
+pymc3e = pymcprotocol.Type3E(plctype="L")
+#if you use iQ-L series PLC,
+pymc3e = pymcprotocol.Type3E(plctype="iQ-L")
+#if you use iQ-R series PLC,
+pymc3e = pymcprotocol.Type3E(plctype="iQ-R")
+
+#If you use 4E type
+pymc4e = pymcprotocol.Type4E()
 
 #If you use ascii byte communication, (Default is "binary")
 pymc3e.setaccessopt(commtype="ascii")
@@ -36,6 +54,7 @@ pymc3e.connect("192.168.1.2", 1025)
 
 ### 3. Send command
 ```python
+
 #read from D100 to D110
 wordunits_values = pymc3e.batchread_wordunits(headdevice="D100", readsize=10)
 
@@ -58,7 +77,26 @@ pymc3e.randomwrite(word_devices=["D1000", "D1002"], word_value=[1000, 2000],
 #write 1(ON) to "X0", 0(OFF) to "X10"
 pymc3e.randomwrite_bitunits(bit_devices=["X0", "X10"], values=[1, 0])
 
-pymc3e.close()
+```
+
+### 4. Remote Operation
+```python
+
+#remote run, clear all device
+pymc3e.remote_run(clear_mode=2, force_exec=True)
+
+#remote stop
+pymc3e.remote_stop()
+
+#remote latch clear. (have to PLC be stopped)
+pymc3e.remote_latchclear()
+
+#remote pause
+pymc3e.remote_pause(force_exec=False)
+
+#remote reset
+pymc3e.remote_reset()
+
 ```
 
 ### API Reference
