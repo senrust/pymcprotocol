@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pymcprotocol"
-version = "0.2.2"
+version = "0.2.3"
 description = "MC Protocol(MELSEC Communication Protocol) implementation by Python"
 license = "MIT"
 authors = ["Yohei Osawa <yohei.osawa.318.niko8@gmail.com>"]
