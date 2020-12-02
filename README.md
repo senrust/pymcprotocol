@@ -54,6 +54,7 @@ pymc3e.connect("192.168.1.2", 1025)
 
 ### 3. Send command
 ```python
+
 #read from D100 to D110
 wordunits_values = pymc3e.batchread_wordunits(headdevice="D100", readsize=10)
 
@@ -76,7 +77,26 @@ pymc3e.randomwrite(word_devices=["D1000", "D1002"], word_value=[1000, 2000],
 #write 1(ON) to "X0", 0(OFF) to "X10"
 pymc3e.randomwrite_bitunits(bit_devices=["X0", "X10"], values=[1, 0])
 
-pymc3e.close()
+```
+
+### 4. Remote Operation
+```python
+
+#remote run, clear all device
+pymc3e.remote_run(clear_mode=2, force_exec=True)
+
+#remote stop
+pymc3e.remote_stop()
+
+#remote latch clear. (have to PLC be stopped)
+pymc3e.remote_latchclear()
+
+#remote pause
+pymc3e.remote_pause(force_exec=False)
+
+#remote reset
+pymc3e.remote_reset()
+
 ```
 
 ### API Reference

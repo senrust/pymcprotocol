@@ -96,7 +96,25 @@ You need to set upopen your PLC port to communicate by mcprotocol in Gxworks2 or
    #write 1(ON) to "X0", 0(OFF) to "X10"
    pymc3e.randomwrite_bitunits(bit_devices=["X0", "X10"], values=[1, 0])
    
-   pymc3e.close()
+
+4. Remote Operation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. code-block:: python
+
+   #remote run, clear all device
+   pymc3e.remote_run(clear_mode=2, force_exec=True)
+
+   #remote stop
+   pymc3e.remote_stop()
+
+   #remote latch clear. (have to PLC be stopped)
+   pymc3e.remote_latchclear()
+
+   #remote pause
+   pymc3e.remote_pause(force_exec=False)
+
+   #remote reset
+   pymc3e.remote_reset()
 
 
 .. toctree::

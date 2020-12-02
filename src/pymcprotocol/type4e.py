@@ -18,7 +18,6 @@ class Type4E(Type3E):
     """
     subheader       = 0x54
     subheaderserial = 0X0000
-    _zerovalue = 0x0000
 
     def set_subheaderserial(self, subheaderserial):
         """Change subheader serial

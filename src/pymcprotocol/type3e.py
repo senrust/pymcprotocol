@@ -42,7 +42,6 @@ class Type3E:
                                 specify the station No. of aaccess target module
 
     """
-    _is_connected   = False
     plctype         = const.Q_SERIES
     commtype        = const.COMMTYPE_BINARY
     subheader       = 0x50
@@ -52,8 +51,10 @@ class Type3E:
     dest_modulesta  = 0X0
     timer           = 0
     _sock           = None
+    _is_connected   = False
     _SOCKBUFSIZE    = 4096
     _currentcmd     = None
+    _zerovalue = 0x0000
 
 
     def __init__(self, plctype="Q"):
@@ -77,6 +78,7 @@ class Type3E:
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._sock.connect((ip, port))
         self._sock.settimeout(timeout)
+        self._timeout = timeout
         self._is_connected = True
 
     def close(self):
@@ -679,6 +681,146 @@ class Type3E:
 
         return None
 
+    def remote_run(self, clear_mode, force_exec=False):
+        """Run PLC
+
+        Args:
+            clear_mode(int):     Clear mode. 0: does not clear. 1: clear except latch device. 2: clear all.
+            force_exec(bool):    Force to execute if PLC is operated remotely by other device.
+
+        """
+        if not (clear_mode == 0 or  clear_mode == 1 or clear_mode == 2):
+            raise ValueError("clear_device must be 0, 1 or 2. 0: does not clear. 1: clear except latch device. 2: clear all.")
+        if not (force_exec is True or force_exec is False):
+            raise ValueError("force_exec must be True or False")
+
+        command = 0x1001
+        subcommand = 0x0000
+
+        if force_exec:
+            mode = 0x0003
+        else:
+            mode = 0x0001
+          
+        request_data = bytes()
+        request_data += self._make_commanddata(command, subcommand)
+        request_data += self._make_valuedata(mode, mode="short")
+        request_data += self._make_valuedata(clear_mode, mode="byte")
+        request_data += self._make_valuedata(self._zerovalue, mode="byte")
+        send_data = self._make_senddata(request_data)
+
+        #send mc data
+        self._send(send_data)
+        self._send_data = send_data
+        #reciev mc data
+        recv_data = self._recv()
+        self._recv_data = recv_data
+        self._check_cmdanswer(recv_data)
+        return None
+
+    def remote_stop(self):
+        """ Stop remotely.
+
+        """
+        command = 0x1002
+        subcommand = 0x0000
+
+        request_data = bytes()
+        request_data += self._make_commanddata(command, subcommand)
+        request_data += self._make_valuedata(0x0001, mode="short") #fixed value
+        send_data = self._make_senddata(request_data)
+
+        #send mc data
+        self._send(send_data)
+        self._send_data = send_data
+        #reciev mc data
+        recv_data = self._recv()
+        self._recv_data = recv_data
+        self._check_cmdanswer(recv_data)
+        return None
+
+    def remote_pause(self, force_exec=False):
+        """pause PLC remotely.
+
+        Args:
+            force_exec(bool):    Force to execute if PLC is operated remotely by other device.
+
+        """
+        if not (force_exec is True or force_exec is False):
+            raise ValueError("force_exec must be True or False")
+
+        command = 0x1003
+        subcommand = 0x0000
+
+        if force_exec:
+            mode = 0x0003
+        else:
+            mode = 0x0001
+          
+        request_data = bytes()
+        request_data += self._make_commanddata(command, subcommand)
+        request_data += self._make_valuedata(mode, mode="short")
+        send_data = self._make_senddata(request_data)
+
+        #send mc data
+        self._send(send_data)
+        self._send_data = send_data
+        #reciev mc data
+        recv_data = self._recv()
+        self._recv_data = recv_data
+        self._check_cmdanswer(recv_data)
+        return None
+
+    def remote_latchclear(self):
+        """Clear latch remotely.
+        PLC must be stop when use this command.
+        """
+
+        command = 0x1005
+        subcommand = 0x0000
+
+        request_data = bytes()
+        request_data += self._make_commanddata(command, subcommand)
+        request_data += self._make_valuedata(0x0001, mode="short") #fixed value 
+        send_data = self._make_senddata(request_data)
+
+        #send mc data
+        self._send(send_data)
+        self._send_data = send_data
+        #reciev mc data
+        recv_data = self._recv()
+        self._recv_data = recv_data
+        self._check_cmdanswer(recv_data)
+
+        return None
+
+    def remote_reset(self):
+        """Reset remotely.
+        PLC must be stop when use this command.
+        """
+
+        command = 0x1006
+        subcommand = 0x0000
+
+        request_data = bytes()
+        request_data += self._make_commanddata(command, subcommand)
+        request_data += self._make_valuedata(0x0001, mode="short") #fixed value
+        send_data = self._make_senddata(request_data)
+
+        #send mc data
+        self._send(send_data)
+        self._send_data = send_data
+        #reciev mc data
+        #set time out 1 seconds. Because remote reset may not return data
+        self._sock.settimeout(1)
+        try:
+            recv_data = self._recv()
+            self._recv_data = recv_data
+            self._check_cmdanswer(recv_data)
+        except:
+            pass
+        self._sock.settimeout(self._timeout)
+        return None
 
 
 
