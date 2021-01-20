@@ -406,7 +406,7 @@ class Type3E:
         send_data = self._make_senddata(request_data)
 
         #send mc data
-        self.send(send_data)
+        self._send(send_data)
         self._send_data = send_data
         #reciev mc data
         recv_data = self._recv()
@@ -797,6 +797,7 @@ class Type3E:
     def remote_reset(self):
         """Reset remotely.
         PLC must be stop when use this command.
+        
         """
 
         command = 0x1006

@@ -23,7 +23,7 @@ So you cannot communicate.
 
 ## How to use mc protocol
 ### 1. Set up PLC
-First, you need to set upopen your PLC port to communicate by mcprotocol in Gxworks2 or Gxworks3.  
+First, you need to set up PLC to open port for mcprotocol from Gxworks2 or Gxworks3.  
 - Open port you want to communicate.  
 - Select "Communication Data Code". If you select ascii type, you also need to set "ascii" in setaccessopt method. (default is "bainary")
 - If you would like to write in to PLC, you also have to check __Enable online change__
@@ -37,7 +37,7 @@ pymc3e = pymcprotocol.Type3E()
 #if you use L series PLC,
 pymc3e = pymcprotocol.Type3E(plctype="L")
 #if you use QnA series PLC,
-pymc3e = pymcprotocol.Type3E(plctype="L")
+pymc3e = pymcprotocol.Type3E(plctype="QnA")
 #if you use iQ-L series PLC,
 pymc3e = pymcprotocol.Type3E(plctype="iQ-L")
 #if you use iQ-R series PLC,
