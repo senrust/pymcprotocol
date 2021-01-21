@@ -111,20 +111,22 @@ class Type3E:
 
     def _interpret_device(self, device):
         """Get device code and device number.
+        device number is converted to base number for each device.
 
         Args:
             device(str):    device. (ex: "D1000", "Y1")
 
         Returns:
-            devicecode(str or int): divecode if self.commtype is ascii, returns str, else, returns int
-            devicenum(int):  device number
+            devicecode(str or int): if self.commtype is ascii, returns str devicode, else, returns int devicode
+            devicenum(str or int):  if self.commtype is ascii, returns str devicenum, else, returns int devicenum
         """
         devicetype =  re.search(r"\D+", device).group(0)
         if self.commtype == const.COMMTYPE_BINARY:
-            devicecode = const.DeviceConstants.get_binary_devicecode(self.plctype, devicetype)
+            devicecode, devicebase = const.DeviceConstants.get_binary_devicecode(self.plctype, devicetype)
+            devicenum = int(re.search(r"\d.*", device).group(0), devicebase)
         else:
-            devicecode = const.DeviceConstants.get_ascii_devicecode(self.plctype, devicetype)
-        devicenum = int(re.search(r"\d+", device).group(0))
+            devicecode, _ = const.DeviceConstants.get_ascii_devicecode(self.plctype, devicetype)
+            devicenum = re.search(r"\d.*", device).group(0)
         return devicecode, devicenum
 
     def _set_plctype(self, plctype):
@@ -275,8 +277,8 @@ class Type3E:
             
         """
         device_data = bytes()
+        devicecode, devicenum = self._interpret_device(device)
         if self.commtype is const.COMMTYPE_BINARY:
-            devicecode, devicenum = self._interpret_device(device)
             if self.plctype is const.iQR_SERIES:
                 device_data += devicenum.to_bytes(4, "little")
                 device_data += devicecode.to_bytes(2, "little")
@@ -284,14 +286,12 @@ class Type3E:
                 device_data += devicenum.to_bytes(3, "little")
                 device_data += devicecode.to_bytes(1, "little")
         else:
-            devicecode, devicenum = self._interpret_device(device)
             if self.plctype is const.iQR_SERIES:
                 device_data += devicecode.encode()
-                device_data += format(devicenum).rjust(8, "0").upper().encode()
-
+                device_data += devicenum.rjust(8, "0").upper().encode()
             else:
                 device_data += devicecode.encode()
-                device_data += format(devicenum).rjust(6, "0").upper().encode()
+                device_data += devicenum.rjust(6, "0").upper().encode()
         return device_data
 
     def _make_valuedata(self, value, mode="short"):

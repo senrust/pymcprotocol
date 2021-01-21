@@ -33,7 +33,11 @@ class DeviceCodeError(Exception):
         self.devicename = devicename
 
     def __str__(self):
-        return "devicename: {} is not support {} series PLC".format(self.devicename, self.plctype)
+        error_txt = "devicename: {} is not support {} series PLC.\n"\
+                    "If you enter hexadecimal device(X, Y, B, W, SB, SW, DX, DY, ZR) with only alphabet number\n"\
+                    "(such as XFFF, device name is \"X\", device number is \"FFF\"),\n"\
+                    "please insert 0 between device name and device number.\neg: XFFF → X0FFF".format(self.devicename, self.plctype)            
+        return error_txt
 
 class DeviceConstants:
     """This class defines mc protocol deveice constatnt.
@@ -99,80 +103,81 @@ class DeviceConstants:
 
         Returns:
             devicecode(int):    Device code defined mc protocol (ex: "D" → 0xA8)
+            Base number:        Base number for each device name
         
         """
         if devicename == "SM":
-            return DeviceConstants.SM_DEVICE
+            return DeviceConstants.SM_DEVICE, 10
         elif devicename == "SD":
-            return DeviceConstants.SD_DEVICE
+            return DeviceConstants.SD_DEVICE, 10
         elif devicename == "X":
-            return DeviceConstants.X_DEVICE
+            return DeviceConstants.X_DEVICE, 16
         elif devicename == "Y":
-            return DeviceConstants.Y_DEVICE
+            return DeviceConstants.Y_DEVICE, 16
         elif devicename == "M":
-            return DeviceConstants.M_DEVICE
+            return DeviceConstants.M_DEVICE, 10
         elif devicename == "L":
-            return DeviceConstants.L_DEVICE
+            return DeviceConstants.L_DEVICE, 10
         elif devicename == "F":
-            return DeviceConstants.F_DEVICE
+            return DeviceConstants.F_DEVICE, 10
         elif devicename == "V":
-            return DeviceConstants.V_DEVICE
+            return DeviceConstants.V_DEVICE, 10
         elif devicename == "B":
-            return DeviceConstants.B_DEVICE
+            return DeviceConstants.B_DEVICE, 16
         elif devicename == "D":
-            return DeviceConstants.D_DEVICE
+            return DeviceConstants.D_DEVICE, 10
         elif devicename == "W":
-            return DeviceConstants.W_DEVICE
+            return DeviceConstants.W_DEVICE, 16
         elif devicename == "TS":
-            return DeviceConstants.TS_DEVICE
+            return DeviceConstants.TS_DEVICE, 10
         elif devicename == "TC":
-            return DeviceConstants.TC_DEVICE
+            return DeviceConstants.TC_DEVICE, 10
         elif devicename == "TN":
-            return DeviceConstants.TN_DEVICE
+            return DeviceConstants.TN_DEVICE, 10
         elif devicename == "SS":
-            return DeviceConstants.SS_DEVICE
+            return DeviceConstants.SS_DEVICE, 10
         elif devicename == "SC":
-            return DeviceConstants.SC_DEVICE
+            return DeviceConstants.SC_DEVICE, 10
         elif devicename == "SN":
-            return DeviceConstants.SN_DEVICE
+            return DeviceConstants.SN_DEVICE, 10
         elif devicename == "CS":
-            return DeviceConstants.CS_DEVICE
+            return DeviceConstants.CS_DEVICE, 10
         elif devicename == "CC":
-            return DeviceConstants.CC_DEVICE
+            return DeviceConstants.CC_DEVICE, 10
         elif devicename == "CN":
-            return DeviceConstants.CN_DEVICE
+            return DeviceConstants.CN_DEVICE, 10
         elif devicename == "SB":
-            return DeviceConstants.SB_DEVICE
+            return DeviceConstants.SB_DEVICE, 16
         elif devicename == "SW":
-            return DeviceConstants.SW_DEVICE
+            return DeviceConstants.SW_DEVICE, 16
         elif devicename == "DX":
-            return DeviceConstants.DX_DEVICE
+            return DeviceConstants.DX_DEVICE, 16
         elif devicename == "DY":
-            return DeviceConstants.DY_DEVICE
+            return DeviceConstants.DY_DEVICE, 16
         elif devicename == "R":
-            return DeviceConstants.R_DEVICE
+            return DeviceConstants.R_DEVICE, 10
         elif devicename == "ZR":
-            return DeviceConstants.ZR_DEVICE
+            return DeviceConstants.ZR_DEVICE, 16
         elif (devicename == "LTS") and (plctype == iQR_SERIES):
-            return DeviceConstants.LTS_DEVICE
+            return DeviceConstants.LTS_DEVICE, 10
         elif (devicename == "LTC") and (plctype == iQR_SERIES):
-            return DeviceConstants.LTC_DEVICE
+            return DeviceConstants.LTC_DEVICE, 10
         elif (devicename == "LTN") and (plctype == iQR_SERIES):
-            return DeviceConstants.LTN_DEVICE
+            return DeviceConstants.LTN_DEVICE, 10
         elif (devicename == "LSTS") and (plctype == iQR_SERIES):
-            return DeviceConstants.LSTS_DEVICE
+            return DeviceConstants.LSTS_DEVICE, 10
         elif (devicename == "LSTN") and (plctype == iQR_SERIES):
-            return DeviceConstants.LSTN_DEVICE
+            return DeviceConstants.LSTN_DEVICE, 10
         elif (devicename == "LCS") and (plctype == iQR_SERIES):
-            return DeviceConstants.LCS_DEVICE
+            return DeviceConstants.LCS_DEVICE, 10
         elif (devicename == "LCC") and (plctype == iQR_SERIES):
-            return DeviceConstants.LCC_DEVICE
+            return DeviceConstants.LCC_DEVICE, 10
         elif (devicename == "LCN") and (plctype == iQR_SERIES):
-            return DeviceConstants.LCN_DEVICE
+            return DeviceConstants.LCN_DEVICE, 10
         elif (devicename == "LZ") and (plctype == iQR_SERIES):
-            return DeviceConstants.LZ_DEVICE
+            return DeviceConstants.LZ_DEVICE, 10
         elif (devicename == "RD") and (plctype == iQR_SERIES):
-            return DeviceConstants.RD_DEVICE
+            return DeviceConstants.RD_DEVICE, 10
         else:
             raise DeviceCodeError(plctype, devicename)
 
@@ -186,6 +191,7 @@ class DeviceConstants:
 
         Returns:
             devicecode(int):    Device code defined mc protocol (ex: "D" → "D*")
+            Base number:        Base number for each device name
         
         """
         if plctype == iQR_SERIES:
@@ -193,76 +199,76 @@ class DeviceConstants:
         else:
             padding = 2
         if devicename == "SM":
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 10
         elif devicename == "SD":
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 10
         elif devicename == "X":
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 16
         elif devicename == "Y":
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 16
         elif devicename == "M":
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 10
         elif devicename == "L":
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 10
         elif devicename == "F":
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 10
         elif devicename == "V":
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 10
         elif devicename == "B":
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 16
         elif devicename == "D":
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 10
         elif devicename == "W":
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 16
         elif devicename == "TS":
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 10
         elif devicename == "TC":
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 10
         elif devicename == "TN":
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 10
         elif devicename == "SS":
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 10
         elif devicename == "SC":
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 10
         elif devicename == "SN":
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 10
         elif devicename == "CS":
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 10
         elif devicename == "CC":
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 10
         elif devicename == "CN":
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 10
         elif devicename == "SB":
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 16
         elif devicename == "SW":
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 16
         elif devicename == "DX":
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 16
         elif devicename == "DY":
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 16
         elif devicename == "R":
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 10
         elif devicename == "ZR":
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 16
         elif (devicename == "LTS") and (plctype == iQR_SERIES):
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 10
         elif (devicename == "LTC") and (plctype == iQR_SERIES):
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 10
         elif (devicename == "LTN") and (plctype == iQR_SERIES):
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 10
         elif (devicename == "LSTS") and (plctype == iQR_SERIES):
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 10
         elif (devicename == "LSTN") and (plctype == iQR_SERIES):
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 10
         elif (devicename == "LCS") and (plctype == iQR_SERIES):
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 10
         elif (devicename == "LCC") and (plctype == iQR_SERIES):
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 10
         elif (devicename == "LCN") and (plctype == iQR_SERIES):
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 10
         elif (devicename == "LZ") and (plctype == iQR_SERIES):
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 10
         elif (devicename == "RD") and (plctype == iQR_SERIES):
-            return devicename.ljust(padding, "*")
+            return devicename.ljust(padding, "*"), 10
         else:
             raise DeviceCodeError(plctype, devicename)
