@@ -1,12 +1,12 @@
 [tool.poetry]
 name = "pymcprotocol"
-version = "0.2.3"
+version = "0.2.4"
 description = "MC Protocol(MELSEC Communication Protocol) implementation by Python"
 license = "MIT"
 authors = ["Yohei Osawa <yohei.osawa.318.niko8@gmail.com>"]
 readme = "./README.md"
 homepage = "https://pymcprotocol.netlify.app/" 
-repository = "https://github.com/yohei250r/pymcprotocol"
+repository = "https://github.com/senrust/pymcprotocol"
 keywords = ["Mistubishi", "PLC", "factory"]
 
 [tool.poetry.dependencies]
