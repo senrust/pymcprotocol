@@ -837,6 +837,42 @@ class Type3E:
         self._sock.settimeout(self._timeout)
         return None
 
+    def read_cputype(self):
+        """Read CPU type
+
+        Returns:
+            CPU type(str):      CPU type
+            CPU code(str):      CPU code (4 length number)
+
+        """
+
+        command = 0x0101
+        subcommand = 0x0000
+
+        request_data = bytes()
+        request_data += self._make_commanddata(command, subcommand)
+        send_data = self._make_senddata(request_data)
+
+        #send mc data
+        self._send(send_data)
+        self._send_data = send_data
+        #reciev mc data
+        recv_data = self._recv()
+        self._recv_data = recv_data
+        self._check_cmdanswer(recv_data)
+        data_index = self._get_answerdata_index()
+        cpu_name_length = 16
+        if self.commtype == const.COMMTYPE_BINARY:
+            cpu_type = recv_data[data_index:data_index+cpu_name_length].decode()
+            cpu_type = cpu_type.replace("\x20", "")
+            cpu_code = int.from_bytes(recv_data[data_index+cpu_name_length:], "little")
+            cpu_code = format(cpu_code, "x").rjust(4, "0")
+        else:
+            cpu_type = recv_data[data_index:data_index+cpu_name_length].decode()
+            cpu_type = cpu_type.replace("\x20", "")
+            cpu_code = recv_data[data_index+cpu_name_length:].decode()
+        return cpu_type, cpu_code
+
     def remote_unlock(self, password="", request_input=False):
         """Unlock PLC by inputting password.
 
