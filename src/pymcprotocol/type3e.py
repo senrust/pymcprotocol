@@ -823,9 +823,79 @@ class Type3E:
         self._sock.settimeout(self._timeout)
         return None
 
+    def remote_unlock(self, password="", request_input=False):
+        """Unlock PLC by inputting password.
+
+        Args:
+            password(str):          Remote password
+            request_input(bool):    If true, require inputting password.
+                                    If false, use password.
+        """
+        if request_input:
+            password = input("Please enter password\n")
+        if password.isascii() is False:
+            raise ValueError("password must be only ascii code")
+        if self.plctype is const.iQR_SERIES:
+            if not (6 <= len(password) <= 32):
+                raise ValueError("password length must be from 6 to 32")
+        else:
+            if not (4 == len(password)):
+                raise ValueError("password length must be 4")
 
 
-    
+        command = 0x1630
+        subcommand = 0x0000
 
-    
-        
+        request_data = bytes()
+        request_data += self._make_commanddata(command, subcommand)
+        request_data += self._make_valuedata(len(password), mode="short") 
+        request_data += password.encode()
+
+        send_data = self._make_senddata(request_data)
+
+        #send mc data
+        self._send(send_data)
+        self._send_data = send_data
+        #reciev mc data
+        recv_data = self._recv()
+        self._recv_data = recv_data
+        self._check_cmdanswer(recv_data)
+        return None
+
+    def remote_lock(self, password="", request_input=False):
+        """Lock PLC by inputting password.
+
+        Args:
+            password(str):          Remote password
+            request_input(bool):    If true, require inputting password.
+                                    If false, use password.
+        """
+        if request_input:
+            password = input("Please enter password\n")
+        if password.isascii() is False:
+            raise ValueError("password must be only ascii code")
+        if self.plctype is const.iQR_SERIES:
+            if not (6 <= len(password) <= 32):
+                raise ValueError("password length must be from 6 to 32")
+        else:
+            if not (4 == len(password)):
+                raise ValueError("password length must be 4")
+
+        command = 0x1631
+        subcommand = 0x0000
+
+        request_data = bytes()
+        request_data += self._make_commanddata(command, subcommand)
+        request_data += self._make_valuedata(len(password), mode="short") 
+        request_data += password.encode()
+
+        send_data = self._make_senddata(request_data)
+
+        #send mc data
+        self._send(send_data)
+        self._send_data = send_data
+        #reciev mc data
+        recv_data = self._recv()
+        self._recv_data = recv_data
+        self._check_cmdanswer(recv_data)
+        return None
