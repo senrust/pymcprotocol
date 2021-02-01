@@ -913,3 +913,49 @@ class Type3E:
         self._recv_data = recv_data
         self._check_cmdanswer(recv_data)
         return None
+
+    def echo_test(self, send_data):
+        """Do echo test.
+        Send data and answer data should be same.
+
+        Args:
+            send_data(str):     send data to PLC
+
+        Returns:
+            answer_len(int):    answer data length from PLC
+            answer_data(str):   answer data from PLC
+
+        """
+        if send_data.isascii() is False:
+            raise ValueError("send_data must be only ascii code")
+        if not ( 1 <= len(send_data) <= 960):
+            raise ValueError("send_data length must be from 1 to 960")
+
+        command = 0x0619
+        subcommand = 0x0000
+
+        request_data = bytes()
+        request_data += self._make_commanddata(command, subcommand)
+        request_data += self._make_valuedata(len(send_data), mode="short") 
+        request_data += send_data.encode()
+
+        send_data = self._make_senddata(request_data)
+
+        #send mc data
+        self._send(send_data)
+        self._send_data = send_data
+        #reciev mc data
+        recv_data = self._recv()
+        self._recv_data = recv_data
+        self._check_cmdanswer(recv_data)
+
+        data_index = self._get_answerdata_index()
+        if self.commtype == const.COMMTYPE_BINARY:
+            data_range = 2
+            answer_len = int.from_bytes(recv_data[data_index:data_index+data_range], "little")
+            answer = recv_data[data_index+data_range:].decode()
+        else:
+            data_range = 4
+            answer_len = int(recv_data[data_index:data_index+data_range].decode(), 16)
+            answer = recv_data[data_index+data_range:].decode()
+        return answer_len, answer
