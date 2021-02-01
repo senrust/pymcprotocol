@@ -163,6 +163,22 @@ class Type3E:
         else:
             raise CommTypeError()
 
+    def _get_answerdata_index(self):
+        """Get answer data index from return data byte.
+        """
+        if self.commtype == const.COMMTYPE_BINARY:
+            return 11
+        else:
+            return 22
+
+    def _get_commandstatus_index(self):
+        """Get command status index from return data byte.
+        """
+        if self.commtype == const.COMMTYPE_BINARY:
+            return 9
+        else:
+            return 18
+
     def setaccessopt(self, commtype=None, network=None, pc=None, dest_moduleio=None, dest_modulesta=None, timer=None):
         """Set mc protocol access option.
 
@@ -325,10 +341,11 @@ class Type3E:
         """check command answer. If answer status is not 0, raise error according to answer  
 
         """
+        commandstatus_index = self._get_commandstatus_index()
         if self.commtype == const.COMMTYPE_BINARY:
-            answer_status = int.from_bytes(recv_data[9:11], "little")
+            answer_status = int.from_bytes(recv_data[commandstatus_index:commandstatus_index+2], "little")
         else:
-            answer_status_str = recv_data[18:22].decode()
+            answer_status_str = recv_data[commandstatus_index:commandstatus_index+4].decode()
             answer_status = int(answer_status_str, 16)
         mcprotocolerror.check_mcprotocol_error(answer_status)
 
@@ -365,15 +382,14 @@ class Type3E:
         self._check_cmdanswer(recv_data)
 
         word_values = []
+        data_index = self._get_answerdata_index()
         if self.commtype == const.COMMTYPE_BINARY:
-            data_index = 11
             data_range = 2
             for i in range(readsize):
                 wordvalue = int.from_bytes(recv_data[data_index:data_index+data_range], "little")
                 word_values.append(wordvalue)
                 data_index += data_range
         else:
-            data_index = 22
             data_range = 4
             for i in range(readsize):
                 wordvalue = int(recv_data[data_index:data_index+data_range].decode(), 16)
@@ -417,7 +433,7 @@ class Type3E:
         bit_values = []
         if self.commtype == const.COMMTYPE_BINARY:
             for i in range(readsize):
-                data_index = i//2 + 11
+                data_index = i//2 + self._get_answerdata_index()
                 value = int.from_bytes(recv_data[data_index:data_index+1], "little")
                 #if i//2==0, bit value is 4th bit
                 if(i%2==0):
@@ -426,7 +442,7 @@ class Type3E:
                     bitvalue = 1 if value & (1<<0) else 0
                 bit_values.append(bitvalue)
         else:
-            data_index = 22
+            data_index = self._get_answerdata_index()
             byte_range = 1
             for i in range(readsize):
                 bitvalue = int(recv_data[data_index:data_index+byte_range].decode())
@@ -564,11 +580,10 @@ class Type3E:
         recv_data = self._recv()
         self._recv_data = recv_data
         self._check_cmdanswer(recv_data)
-
+        data_index = self._get_answerdata_index()
         word_values = []
         dword_values = []
         if self.commtype == const.COMMTYPE_BINARY:
-            data_index = 11
             data_range = 2
             for i in range(word_size):
                 wordvalue = int.from_bytes(recv_data[data_index:data_index+data_range], "little")
@@ -580,7 +595,6 @@ class Type3E:
                 dword_values.append(dwordvalue)
                 data_index += data_range
         else:
-            data_index = 22
             data_range = 4
             for i in range(word_size):
                 wordvalue = int(recv_data[data_index:data_index+data_range].decode(), 16)
@@ -823,9 +837,161 @@ class Type3E:
         self._sock.settimeout(self._timeout)
         return None
 
+    def read_cputype(self):
+        """Read CPU type
+
+        Returns:
+            CPU type(str):      CPU type
+            CPU code(str):      CPU code (4 length number)
+
+        """
+
+        command = 0x0101
+        subcommand = 0x0000
+
+        request_data = bytes()
+        request_data += self._make_commanddata(command, subcommand)
+        send_data = self._make_senddata(request_data)
+
+        #send mc data
+        self._send(send_data)
+        self._send_data = send_data
+        #reciev mc data
+        recv_data = self._recv()
+        self._recv_data = recv_data
+        self._check_cmdanswer(recv_data)
+        data_index = self._get_answerdata_index()
+        cpu_name_length = 16
+        if self.commtype == const.COMMTYPE_BINARY:
+            cpu_type = recv_data[data_index:data_index+cpu_name_length].decode()
+            cpu_type = cpu_type.replace("\x20", "")
+            cpu_code = int.from_bytes(recv_data[data_index+cpu_name_length:], "little")
+            cpu_code = format(cpu_code, "x").rjust(4, "0")
+        else:
+            cpu_type = recv_data[data_index:data_index+cpu_name_length].decode()
+            cpu_type = cpu_type.replace("\x20", "")
+            cpu_code = recv_data[data_index+cpu_name_length:].decode()
+        return cpu_type, cpu_code
+
+    def remote_unlock(self, password="", request_input=False):
+        """Unlock PLC by inputting password.
+
+        Args:
+            password(str):          Remote password
+            request_input(bool):    If true, require inputting password.
+                                    If false, use password.
+        """
+        if request_input:
+            password = input("Please enter password\n")
+        if password.isascii() is False:
+            raise ValueError("password must be only ascii code")
+        if self.plctype is const.iQR_SERIES:
+            if not (6 <= len(password) <= 32):
+                raise ValueError("password length must be from 6 to 32")
+        else:
+            if not (4 == len(password)):
+                raise ValueError("password length must be 4")
 
 
-    
+        command = 0x1630
+        subcommand = 0x0000
 
-    
-        
+        request_data = bytes()
+        request_data += self._make_commanddata(command, subcommand)
+        request_data += self._make_valuedata(len(password), mode="short") 
+        request_data += password.encode()
+
+        send_data = self._make_senddata(request_data)
+
+        #send mc data
+        self._send(send_data)
+        self._send_data = send_data
+        #reciev mc data
+        recv_data = self._recv()
+        self._recv_data = recv_data
+        self._check_cmdanswer(recv_data)
+        return None
+
+    def remote_lock(self, password="", request_input=False):
+        """Lock PLC by inputting password.
+
+        Args:
+            password(str):          Remote password
+            request_input(bool):    If true, require inputting password.
+                                    If false, use password.
+        """
+        if request_input:
+            password = input("Please enter password\n")
+        if password.isascii() is False:
+            raise ValueError("password must be only ascii code")
+        if self.plctype is const.iQR_SERIES:
+            if not (6 <= len(password) <= 32):
+                raise ValueError("password length must be from 6 to 32")
+        else:
+            if not (4 == len(password)):
+                raise ValueError("password length must be 4")
+
+        command = 0x1631
+        subcommand = 0x0000
+
+        request_data = bytes()
+        request_data += self._make_commanddata(command, subcommand)
+        request_data += self._make_valuedata(len(password), mode="short") 
+        request_data += password.encode()
+
+        send_data = self._make_senddata(request_data)
+
+        #send mc data
+        self._send(send_data)
+        self._send_data = send_data
+        #reciev mc data
+        recv_data = self._recv()
+        self._recv_data = recv_data
+        self._check_cmdanswer(recv_data)
+        return None
+
+    def echo_test(self, send_data):
+        """Do echo test.
+        Send data and answer data should be same.
+
+        Args:
+            send_data(str):     send data to PLC
+
+        Returns:
+            answer_len(int):    answer data length from PLC
+            answer_data(str):   answer data from PLC
+
+        """
+        if send_data.isascii() is False:
+            raise ValueError("send_data must be only ascii code")
+        if not ( 1 <= len(send_data) <= 960):
+            raise ValueError("send_data length must be from 1 to 960")
+
+        command = 0x0619
+        subcommand = 0x0000
+
+        request_data = bytes()
+        request_data += self._make_commanddata(command, subcommand)
+        request_data += self._make_valuedata(len(send_data), mode="short") 
+        request_data += send_data.encode()
+
+        send_data = self._make_senddata(request_data)
+
+        #send mc data
+        self._send(send_data)
+        self._send_data = send_data
+        #reciev mc data
+        recv_data = self._recv()
+        self._recv_data = recv_data
+        self._check_cmdanswer(recv_data)
+
+        data_index = self._get_answerdata_index()
+        if self.commtype == const.COMMTYPE_BINARY:
+            data_range = 2
+            answer_len = int.from_bytes(recv_data[data_index:data_index+data_range], "little")
+            answer = recv_data[data_index+data_range:].decode()
+        else:
+            data_range = 4
+            answer_len = int(recv_data[data_index:data_index+data_range].decode(), 16)
+            answer = recv_data[data_index+data_range:].decode()
+        return answer_len, answer

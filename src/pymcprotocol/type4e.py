@@ -32,6 +32,22 @@ class Type4E(Type3E):
             raise ValueError("subheaderserial must be 0 <= subheaderserial <= 65535") 
         return None
 
+    def _get_answerdata_index(self):
+        """Get answer data index from return data byte.
+        4e type's data index is defferent from 3e type's.
+        """
+        if self.commtype == const.COMMTYPE_BINARY:
+            return 15
+        else:
+            return 30
+
+    def _get_commandstatus_index(self):
+        """Get command status index from return data byte.
+        """
+        if self.commtype == const.COMMTYPE_BINARY:
+            return 13
+        else:
+            return 26
 
     def _make_senddata(self, requestdata):
         """Makes send mc protorocl data.
