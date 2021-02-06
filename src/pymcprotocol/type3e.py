@@ -73,6 +73,7 @@ class Type3E:
     _zerovalue      = 0x0000
     _wordsize       = 2 #how many byte is required to describe word value 
                         #binary: 2, ascii:4.
+    _DEBUG          = False
 
 
 
@@ -81,6 +82,11 @@ class Type3E:
 
         """
         self._set_plctype(plctype)
+    
+    def _set_debug(self, debug=False):
+        """Turn on debug mode
+        """
+        self._DEBUG = debug
     
     def connect(self, ip, port, timeout=None):
         """Connect to PLC
@@ -416,11 +422,12 @@ class Type3E:
         send_data = self._make_senddata(request_data)
 
         #send mc data
-        self._send(send_data)
-        self._send_data = send_data
+        if self._DEBUG:
+            return None    
+        else:
+            self._send(send_data)
         #reciev mc data
         recv_data = self._recv()
-        self._recv_data = recv_data
         self._check_cmdanswer(recv_data)
 
         word_values = []
@@ -456,12 +463,12 @@ class Type3E:
         send_data = self._make_senddata(request_data)
 
         #send mc data
-        self._send(send_data)
-        self._send_data = send_data
+        if self._DEBUG:
+            return None    
+        else:
+            self._send(send_data)
         #reciev mc data
         recv_data = self._recv()
-        self._recv_data = recv_data
-
         self._check_cmdanswer(recv_data)
 
         bit_values = []
@@ -510,11 +517,12 @@ class Type3E:
         send_data = self._make_senddata(request_data)
 
         #send mc data
-        self._send(send_data)
-        self._send_data = send_data
+        if self._DEBUG:
+            return None    
+        else:
+            self._send(send_data)
         #reciev mc data
         recv_data = self._recv()
-        self._recv_data = recv_data
         self._check_cmdanswer(recv_data)
 
         return None
@@ -565,11 +573,12 @@ class Type3E:
         send_data = self._make_senddata(request_data)
                     
         #send mc data
-        self._send(send_data)
-        self._send_data = send_data
+        if self._DEBUG:
+            return None    
+        else:
+            self._send(send_data)
         #reciev mc data
         recv_data = self._recv()
-        self._recv_data = recv_data
         self._check_cmdanswer(recv_data)
 
         return None
@@ -608,11 +617,12 @@ class Type3E:
         send_data = self._make_senddata(request_data)
 
         #send mc data
-        self._send(send_data)
-        self._send_data = send_data
+        if self._DEBUG:
+            return None    
+        else:
+            self._send(send_data)
         #reciev mc data
         recv_data = self._recv()
-        self._recv_data = recv_data
         self._check_cmdanswer(recv_data)
         data_index = self._get_answerdata_index()
         word_values = []
@@ -665,11 +675,12 @@ class Type3E:
         send_data = self._make_senddata(request_data)
 
         #send mc data
-        self._send(send_data)
-        self._send_data = send_data
+        if self._DEBUG:
+            return None    
+        else:
+            self._send(send_data)
         #reciev mc data
         recv_data = self._recv()
-        self._recv_data = recv_data
         self._check_cmdanswer(recv_data)
         return None
 
@@ -705,11 +716,12 @@ class Type3E:
         send_data = self._make_senddata(request_data)
                     
         #send mc data
-        self._send(send_data)
-        self._send_data = send_data
+        if self._DEBUG:
+            return None    
+        else:
+            self._send(send_data)
         #reciev mc data
         recv_data = self._recv()
-        self._recv_data = recv_data
         self._check_cmdanswer(recv_data)
 
         return None
@@ -743,11 +755,13 @@ class Type3E:
         send_data = self._make_senddata(request_data)
 
         #send mc data
-        self._send(send_data)
-        self._send_data = send_data
+        if self._DEBUG:
+            return None    
+        else:
+            self._send(send_data)
+        
         #reciev mc data
         recv_data = self._recv()
-        self._recv_data = recv_data
         self._check_cmdanswer(recv_data)
         return None
 
@@ -764,11 +778,12 @@ class Type3E:
         send_data = self._make_senddata(request_data)
 
         #send mc data
-        self._send(send_data)
-        self._send_data = send_data
+        if self._DEBUG:
+            return None    
+        else:
+            self._send(send_data)
         #reciev mc data
         recv_data = self._recv()
-        self._recv_data = recv_data
         self._check_cmdanswer(recv_data)
         return None
 
@@ -796,11 +811,12 @@ class Type3E:
         send_data = self._make_senddata(request_data)
 
         #send mc data
-        self._send(send_data)
-        self._send_data = send_data
+        if self._DEBUG:
+            return None    
+        else:
+            self._send(send_data)
         #reciev mc data
         recv_data = self._recv()
-        self._recv_data = recv_data
         self._check_cmdanswer(recv_data)
         return None
 
@@ -818,11 +834,12 @@ class Type3E:
         send_data = self._make_senddata(request_data)
 
         #send mc data
-        self._send(send_data)
-        self._send_data = send_data
+        if self._DEBUG:
+            return None    
+        else:
+            self._send(send_data)
         #reciev mc data
         recv_data = self._recv()
-        self._recv_data = recv_data
         self._check_cmdanswer(recv_data)
 
         return None
@@ -842,14 +859,15 @@ class Type3E:
         send_data = self._make_senddata(request_data)
 
         #send mc data
-        self._send(send_data)
-        self._send_data = send_data
+        if self._DEBUG:
+            return None    
+        else:
+            self._send(send_data)
         #reciev mc data
         #set time out 1 seconds. Because remote reset may not return data
         self._sock.settimeout(1)
         try:
             recv_data = self._recv()
-            self._recv_data = recv_data
             self._check_cmdanswer(recv_data)
         except:
             pass
@@ -873,11 +891,12 @@ class Type3E:
         send_data = self._make_senddata(request_data)
 
         #send mc data
-        self._send(send_data)
-        self._send_data = send_data
+        if self._DEBUG:
+            return None    
+        else:
+            self._send(send_data)
         #reciev mc data
         recv_data = self._recv()
-        self._recv_data = recv_data
         self._check_cmdanswer(recv_data)
         data_index = self._get_answerdata_index()
         cpu_name_length = 16
@@ -922,11 +941,12 @@ class Type3E:
         send_data = self._make_senddata(request_data)
 
         #send mc data
-        self._send(send_data)
-        self._send_data = send_data
+        if self._DEBUG:
+            return None    
+        else:
+            self._send(send_data)
         #reciev mc data
         recv_data = self._recv()
-        self._recv_data = recv_data
         self._check_cmdanswer(recv_data)
         return None
 
@@ -960,11 +980,12 @@ class Type3E:
         send_data = self._make_senddata(request_data)
 
         #send mc data
-        self._send(send_data)
-        self._send_data = send_data
+        if self._DEBUG:
+            return None    
+        else:
+            self._send(send_data)
         #reciev mc data
         recv_data = self._recv()
-        self._recv_data = recv_data
         self._check_cmdanswer(recv_data)
         return None
 
@@ -996,11 +1017,12 @@ class Type3E:
         send_data = self._make_senddata(request_data)
 
         #send mc data
-        self._send(send_data)
-        self._send_data = send_data
+        if self._DEBUG:
+            return None    
+        else:
+            self._send(send_data)
         #reciev mc data
         recv_data = self._recv()
-        self._recv_data = recv_data
         self._check_cmdanswer(recv_data)
 
         data_index = self._get_answerdata_index()
