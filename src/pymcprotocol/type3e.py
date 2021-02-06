@@ -7,7 +7,7 @@ from . import mcprotocolerror
 from . import mcprotocolconst as const
 
 
-def twos_comp(val, mode="short"):
+def twos_comp(val:int, mode:str="short"):
     """compute the 2's complement of int value val
     """
     if mode =="byte":
@@ -72,7 +72,6 @@ class Type3E:
     _is_connected   = False
     _SOCKBUFSIZE    = 4096
     _currentcmd     = None
-    _zerovalue      = 0x0000
     _wordsize       = 2 #how many byte is required to describe word value 
                         #binary: 2, ascii:4.
     _DEBUG          = False
@@ -718,7 +717,6 @@ class Type3E:
         request_data += self._make_commanddata(command, subcommand)
         request_data += self._encode_valuedata(write_size, mode="byte")
         for bit_device, value in zip(bit_devices, values):
-            #ここは01でいいのか要確認
             request_data += self._make_devicedata(bit_device)
             request_data += self._encode_valuedata(value, mode="byte")
         send_data = self._make_senddata(request_data)
@@ -759,7 +757,7 @@ class Type3E:
         request_data += self._make_commanddata(command, subcommand)
         request_data += self._encode_valuedata(mode, mode="short")
         request_data += self._encode_valuedata(clear_mode, mode="byte")
-        request_data += self._encode_valuedata(self._zerovalue, mode="byte")
+        request_data += self._encode_valuedata(0, mode="byte")
         send_data = self._make_senddata(request_data)
 
         #send mc data
@@ -838,7 +836,6 @@ class Type3E:
 
         request_data = bytes()
         request_data += self._make_commanddata(command, subcommand)
-        #1が必要か要確認
         request_data += self._encode_valuedata(0x0001, mode="short") #fixed value 
         send_data = self._make_senddata(request_data)
 
