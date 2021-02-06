@@ -56,16 +56,18 @@ class Type3E:
                                 the CPU module of the multiple CPU system and redundant system.
         dest_modulesta(int):    accessing a multidrop connection station via network, 
                                 specify the station No. of aaccess target module
-
+        timer(int):             time to raise Timeout error(/250msec). default=4(1sec)
+                                If PLC elapsed this time, PLC returns Timeout answer.
+                                Note: python socket timeout is always set timer+1sec. To recieve Timeout answer.
     """
     plctype         = const.Q_SERIES
     commtype        = const.COMMTYPE_BINARY
-    subheader       = 0x50
+    subheader       = 0x5000
     network         = 0
     pc              = 0xFF
     dest_moduleio   = 0X3FF
     dest_modulesta  = 0X0
-    timer           = 0
+    timer           = 4
     _sock           = None
     _is_connected   = False
     _SOCKBUFSIZE    = 4096
@@ -88,7 +90,7 @@ class Type3E:
         """
         self._DEBUG = debug
     
-    def connect(self, ip, port, timeout=None):
+    def connect(self, ip, port):
         """Connect to PLC
 
         Args:
@@ -99,11 +101,8 @@ class Type3E:
         """
         self._ip = ip
         self._port = port
-        self._timeout = timeout
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._sock.connect((ip, port))
-        self._sock.settimeout(timeout)
-        self._timeout = timeout
         self._is_connected = True
 
     def close(self):
@@ -121,6 +120,7 @@ class Type3E:
         
         """
         if self._is_connected:
+            self._sock.settimeout(self.timer+1)
             self._sock.send(send_data)
         else:
             raise Exception("socket is not connected")
@@ -206,7 +206,7 @@ class Type3E:
         else:
             return 18
 
-    def setaccessopt(self, commtype=None, network=None, pc=None, dest_moduleio=None, dest_modulesta=None, timer=None):
+    def setaccessopt(self, commtype=None, network=None, pc=None, dest_moduleio=None, dest_modulesta=None, timer_sec=None):
         """Set mc protocol access option.
 
         Args:
@@ -218,7 +218,9 @@ class Type3E:
                                     the CPU module of the multiple CPU system and redundant system.
             dest_modulesta(int):    accessing a multidrop connection station via network, 
                                     specify the station No. of aaccess target module
-            timer(int):             wait time up to the completion of reading and writing processing.
+            timer_sec(int):         Time out to return Timeout Error from PLC. 
+                                    MC protocol time is per 250msec, but for ease, setaccessopt requires per sec.
+                                    Socket time out is set timer_sec + 1 sec.
 
         """
         if commtype:
@@ -247,12 +249,13 @@ class Type3E:
                 self.dest_modulesta = dest_modulesta
             except:
                 raise ValueError("dest_modulesta must be 0 <= dest_modulesta <= 255") 
-        if timer:
+        if timer_sec:
             try:
-                timer.to_bytes(2, "little")
-                self.timer = timer
+                timer_250msec = 4 * timer_sec
+                timer_250msec.to_bytes(2, "little")
+                self.timer = timer_250msec
             except:
-                raise ValueError("timer must be 0 <= timer <= 65535, / 250msec") 
+                raise ValueError("timer_sec must be 0 <= timer_sec <= 16383, / sec") 
         return None
     
     def _make_senddata(self, requestdata):
@@ -267,7 +270,11 @@ class Type3E:
 
         """
         mc_data = bytes()
-        mc_data += self._encode_valuedata(self.subheader, "short")
+        # subheader is big endian
+        if self.commtype == const.COMMTYPE_BINARY:
+             mc_data += self.subheader.to_bytes(2, "big")
+        else:
+            mc_data += format(self.subheader, "x").ljust(4, "0").upper().encode()
         mc_data += self._encode_valuedata(self.network, "byte")
         mc_data += self._encode_valuedata(self.pc, "byte")
         mc_data += self._encode_valuedata(self.dest_moduleio, "short")
@@ -423,7 +430,7 @@ class Type3E:
 
         #send mc data
         if self._DEBUG:
-            return None    
+            return send_data    
         else:
             self._send(send_data)
         #reciev mc data
@@ -464,7 +471,7 @@ class Type3E:
 
         #send mc data
         if self._DEBUG:
-            return None    
+            return send_data   
         else:
             self._send(send_data)
         #reciev mc data
@@ -513,12 +520,12 @@ class Type3E:
         request_data += self._make_devicedata(headdevice)
         request_data += self._encode_valuedata(write_size)
         for value in values:
-            request_data += self._encode_valuedata(value)
+            request_data += self._encode_valuedata(value, isSigned=True)
         send_data = self._make_senddata(request_data)
 
         #send mc data
         if self._DEBUG:
-            return None    
+            return send_data   
         else:
             self._send(send_data)
         #reciev mc data
@@ -574,7 +581,7 @@ class Type3E:
                     
         #send mc data
         if self._DEBUG:
-            return None    
+            return send_data   
         else:
             self._send(send_data)
         #reciev mc data
@@ -618,7 +625,7 @@ class Type3E:
 
         #send mc data
         if self._DEBUG:
-            return None    
+            return send_data   
         else:
             self._send(send_data)
         #reciev mc data
@@ -668,15 +675,15 @@ class Type3E:
         request_data += self._encode_valuedata(dword_size, mode="byte")
         for word_device, word_value in zip(word_devices, word_values):
             request_data += self._make_devicedata(word_device)
-            request_data += self._encode_valuedata(word_value)
+            request_data += self._encode_valuedata(word_value, isSigned=True)
         for dword_device, dword_value in zip(dword_devices, dword_values):
             request_data += self._make_devicedata(dword_device)   
-            request_data += self._encode_valuedata(dword_value, mode="long")     
+            request_data += self._encode_valuedata(dword_value, mode="long", isSigned=True)     
         send_data = self._make_senddata(request_data)
 
         #send mc data
         if self._DEBUG:
-            return None    
+            return send_data   
         else:
             self._send(send_data)
         #reciev mc data
@@ -711,13 +718,14 @@ class Type3E:
         request_data += self._make_commanddata(command, subcommand)
         request_data += self._encode_valuedata(write_size, mode="byte")
         for bit_device, value in zip(bit_devices, values):
+            #ここは01でいいのか要確認
             request_data += self._make_devicedata(bit_device)
             request_data += self._encode_valuedata(value, mode="byte")
         send_data = self._make_senddata(request_data)
                     
         #send mc data
         if self._DEBUG:
-            return None    
+            return send_data   
         else:
             self._send(send_data)
         #reciev mc data
@@ -756,7 +764,7 @@ class Type3E:
 
         #send mc data
         if self._DEBUG:
-            return None    
+            return send_data   
         else:
             self._send(send_data)
         
@@ -779,7 +787,7 @@ class Type3E:
 
         #send mc data
         if self._DEBUG:
-            return None    
+            return send_data   
         else:
             self._send(send_data)
         #reciev mc data
@@ -812,7 +820,7 @@ class Type3E:
 
         #send mc data
         if self._DEBUG:
-            return None    
+            return send_data   
         else:
             self._send(send_data)
         #reciev mc data
@@ -830,12 +838,13 @@ class Type3E:
 
         request_data = bytes()
         request_data += self._make_commanddata(command, subcommand)
+        #1が必要か要確認
         request_data += self._encode_valuedata(0x0001, mode="short") #fixed value 
         send_data = self._make_senddata(request_data)
 
         #send mc data
         if self._DEBUG:
-            return None    
+            return send_data   
         else:
             self._send(send_data)
         #reciev mc data
@@ -860,18 +869,16 @@ class Type3E:
 
         #send mc data
         if self._DEBUG:
-            return None    
+            return send_data   
         else:
             self._send(send_data)
         #reciev mc data
         #set time out 1 seconds. Because remote reset may not return data
-        self._sock.settimeout(1)
         try:
             recv_data = self._recv()
             self._check_cmdanswer(recv_data)
         except:
             pass
-        self._sock.settimeout(self._timeout)
         return None
 
     def read_cputype(self):
@@ -892,7 +899,7 @@ class Type3E:
 
         #send mc data
         if self._DEBUG:
-            return None    
+            return send_data   
         else:
             self._send(send_data)
         #reciev mc data
@@ -942,7 +949,7 @@ class Type3E:
 
         #send mc data
         if self._DEBUG:
-            return None    
+            return send_data   
         else:
             self._send(send_data)
         #reciev mc data
@@ -981,7 +988,7 @@ class Type3E:
 
         #send mc data
         if self._DEBUG:
-            return None    
+            return send_data   
         else:
             self._send(send_data)
         #reciev mc data
@@ -1018,7 +1025,7 @@ class Type3E:
 
         #send mc data
         if self._DEBUG:
-            return None    
+            return send_data   
         else:
             self._send(send_data)
         #reciev mc data
