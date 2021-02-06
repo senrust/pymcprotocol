@@ -62,7 +62,7 @@ wordunits_values = pymc3e.batchread_wordunits(headdevice="D100", readsize=10)
 bitunits_values = pymc3e.batchread_bitunits(headdevice="X10", readsize=10)
 
 #write from D10 to D15
-pymc3e.batchread_wordunits(headdevice="D10", values=[0, 10, 20, 30, 40])
+pymc3e.batchwrite_wordunits(headdevice="D10", values=[0, 10, 20, 30, 40])
 
 #write from Y10 to Y15
 pymc3e.batchwrite_bitunits(headdevice="Y10", values=[0, 1, 0, 1, 0])
