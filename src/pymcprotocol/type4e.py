@@ -41,7 +41,7 @@ class Type4E(Type3E):
         else:
             return 30
 
-    def _get_commandstatus_index(self):
+    def _get_answerstatus_index(self):
         """Get command status index from return data byte.
         """
         if self.commtype == const.COMMTYPE_BINARY:
