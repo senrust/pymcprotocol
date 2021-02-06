@@ -65,7 +65,7 @@ bitunits_values = pymc3e.batchread_bitunits(headdevice="X10", readsize=10)
 pymc3e.batchread_wordunits(headdevice="D10", values=[0, 10, 20, 30, 40])
 
 #write from Y10 to Y15
-pymc3e.batchread_bitunits(headdevice="Y10", values=[0, 1, 0, 1, 0])
+pymc3e.batchwrite_bitunits(headdevice="Y10", values=[0, 1, 0, 1, 0])
 
 #read "D1000", "D2000" and  dword "D3000".
 word_values, dword_values = pymc3e.randomread(word_devices=["D1000", "D2000"], dword_devices=["D3000"])
@@ -97,7 +97,28 @@ pymc3e.remote_pause(force_exec=False)
 #remote reset
 pymc3e.remote_reset()
 
+#read PLC type
+cpu_type, cpu_code = pymc3e.read_cputype()
+
 ```
+
+
+### 5.  Unlock and lock PLC
+```python
+
+#Unlock PLC,
+#If you set PLC to locked, you need to unlkock to remote operation
+#Except iQ-R, password is 4 character.
+pymc3e.remote_unlock(password="1234")
+#If you want to hide password from program
+#You can enter passwrod directly
+pymc3e.remote_unlock(request_input=True)
+
+#Lock PLC
+pymc3e.remote_lock(password="1234")
+pymc3e.remote_lock(request_input=True)
+```
+
 
 ### API Reference
 API reference is depoloyed on here.  
