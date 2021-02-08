@@ -22,7 +22,7 @@ Protocol type
 ==================================
 Now, pymcprotocol supports only mcprotocol 3E type.
 4E type is implemented. But not tested.
-1C~4C type does not suuport.
+1C~4C type is not suuported.
 
 Support PLC series
 ==================================
@@ -32,8 +32,10 @@ Support PLC series
 - iQ-L Series
 - iQ-R Series
 
-A series does not support 3E or 4E type communication.  
-So you cannot use. 
+A series does not support 3E or 4E type.  
+So you cannot communicate.  
+pymcprotocol is tested in Q-CPU.
+If you notice some bug, please raise issue or pull request.
 
 How to use pymcprotocol
 ==================================
@@ -81,10 +83,10 @@ You need to set upopen your PLC port to communicate by mcprotocol in Gxworks2 or
    bitunits_values = pymc3e.batchread_bitunits(headdevice="X10", readsize=10)
 
    #write from D10 to D15
-   pymc3e.batchread_wordunits(headdevice="D10", values=[0, 10, 20, 30, 40])
+   pymc3e.batchwrite_wordunits(headdevice="D10", values=[0, 10, 20, 30, 40])
 
    #write from Y10 to Y15
-   pymc3e.batchread_bitunits(headdevice="Y10", values=[0, 1, 0, 1, 0])
+   pymc3e.batchwrite_bitunits(headdevice="Y10", values=[0, 1, 0, 1, 0])
 
    #read "D1000", "D2000" and  dword "D3000".
    word_values, dword_values = pymc3e.randomread(word_devices=["D1000", "D2000"], dword_devices=["D3000"])
@@ -116,13 +118,36 @@ You need to set upopen your PLC port to communicate by mcprotocol in Gxworks2 or
    #remote reset
    pymc3e.remote_reset()
 
+   #read PLC type
+   cpu_type, cpu_code = pymc3e.read_cputype()
+
+
+5. Remote Operation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. code-block:: python
+
+   #Unlock PLC,
+   #If you set PLC to locked, you need to unlkock to remote operation
+   #Except iQ-R, password is 4 character.
+   pymc3e.remote_unlock(password="1234")
+   #If you want to hide password from program
+   #You can enter passwrod directly
+   pymc3e.remote_unlock(request_input=True)
+
+   #Lock PLC
+   pymc3e.remote_lock(password="1234")
+   pymc3e.remote_lock(request_input=True)
+
+.. toctree::
+   :maxdepth: 2
+   
+   pymcprotocol
 
 .. toctree::
    :maxdepth: 2
 
-   pymcprotocol
-
-
+   pymcprotocol does not support entire MC protocol since it is very complicated and troublesome.
+   If you would like to use unsupported function, please tell me.
 
 Indices and tables
 ==================

@@ -1,5 +1,6 @@
 # pymcprotocol
-MC Protocol(MELSEC Communication Protocol) implementation by Python
+MC protocol(MELSEC Communication Protocol) implementation by Python.
+MC protocol enables you to operate PLC from computer.
 
 ## Installation 
 ```console 
@@ -9,7 +10,7 @@ pip install pymcprotocol
 ## Protocol type
 Now, pymcprotocol supports only mcprotocol 3E type.
 4E type is implemented. But not tested.
-1C~4C type does not suuport.
+1C~4C type is not suuported.
 
 ## Support PLC series
 - Q Series
@@ -18,10 +19,11 @@ Now, pymcprotocol supports only mcprotocol 3E type.
 - iQ-L Series
 - iQ-R Series
 
-A series does not support 3E or 4E type.  
-So you cannot communicate. 
+A series does not support 3E or 4E type.
+pymcprotocol is tested in Q-CPU.
+If you notice some bug, please raise issue or pull request.
 
-## How to use mc protocol
+## How to use mc protocol 
 ### 1. Set up PLC
 First, you need to set up PLC to open port for mcprotocol from Gxworks2 or Gxworks3.  
 - Open port you want to communicate.  
@@ -123,3 +125,10 @@ pymc3e.remote_lock(request_input=True)
 ### API Reference
 API reference is depoloyed on here.  
 https://pymcprotocol.netlify.app/
+
+### Lisence 
+Lisence is MIT Lisence.
+
+### Caution
+pymcprotocol does not support entire MC protocol since it is very complicated and troublesome.
+If you would like to use unsupported function, please tell me.

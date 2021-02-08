@@ -16,7 +16,7 @@ class Type4E(Type3E):
         subheader(int):         Subheader for mc protocol
         subheaderserial(int):   Subheader serial for mc protocol to identify client
     """
-    subheader       = 0x54
+    subheader       = 0x5400
     subheaderserial = 0X0000
 
     def set_subheaderserial(self, subheaderserial):
@@ -41,7 +41,7 @@ class Type4E(Type3E):
         else:
             return 30
 
-    def _get_commandstatus_index(self):
+    def _get_answerstatus_index(self):
         """Get command status index from return data byte.
         """
         if self.commtype == const.COMMTYPE_BINARY:
@@ -61,32 +61,20 @@ class Type4E(Type3E):
 
         """
         mc_data = bytes()
+        # subheader is big endian
         if self.commtype == const.COMMTYPE_BINARY:
-            mc_data += self.subheader.to_bytes(2, "little")
-            mc_data += self.subheaderserial.to_bytes(2, "little")
-            mc_data += self._zerovalue.to_bytes(2, "little")
-            mc_data += self.network.to_bytes(1, "little")
-            mc_data += self.pc.to_bytes(1, "little")
-            mc_data += self.dest_moduleio.to_bytes(2, "little")
-            mc_data += self.dest_modulesta.to_bytes(1, "little")
-            #add data size
-            # 2 is for timer size
-            data_size = 2 + len(requestdata)
-            mc_data += data_size.to_bytes(2, "little")
-            mc_data += self.timer.to_bytes(2, "little")
-            mc_data += requestdata
+             mc_data += self.subheader.to_bytes(2, "big")
         else:
             mc_data += format(self.subheader, "x").ljust(4, "0").upper().encode()
-            mc_data += format(self.subheaderserial, "x").rjust(4, "0").upper().encode()
-            mc_data += format(self._zerovalue, "x").rjust(4, "0").upper().encode()
-            mc_data += format(self.network, "x").rjust(2, "0").upper().encode()
-            mc_data += format(self.pc, "x").rjust(2, "0").upper().encode()
-            mc_data += format(self.dest_moduleio, "x").rjust(4, "0").upper().encode()
-            mc_data += format(self.dest_modulesta, "x").rjust(2, "0").upper().encode()
-            #add data size
-            # 4 is for timer size
-            data_size = 4 + len(requestdata)
-            mc_data += format(data_size, "x").rjust(4, "0").upper().encode()
-            mc_data += format(self.timer, "x").rjust(4, "0").upper().encode()
-            mc_data += requestdata
+        mc_data += self._encode_value(self.subheaderserial, "short")
+        mc_data += self._encode_value(0, "short")
+        mc_data += self._encode_value(self.network, "byte")
+        mc_data += self._encode_value(self.pc, "byte")
+        mc_data += self._encode_value(self.dest_moduleio, "short")
+        mc_data += self._encode_value(self.dest_modulesta, "byte")
+        #add self.timer size
+        mc_data += self._encode_value(self._wordsize + len(requestdata), "short")
+        mc_data += self._encode_value(self.timer, "short")
+        mc_data += requestdata
         return mc_data
+
