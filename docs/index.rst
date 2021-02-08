@@ -22,7 +22,7 @@ Protocol type
 ==================================
 Now, pymcprotocol supports only mcprotocol 3E type.
 4E type is implemented. But not tested.
-1C~4C type does not suuport.
+1C~4C type is not suuported.
 
 Support PLC series
 ==================================
@@ -32,8 +32,10 @@ Support PLC series
 - iQ-L Series
 - iQ-R Series
 
-A series does not support 3E or 4E type communication.  
-So you cannot use. 
+A series does not support 3E or 4E type.  
+So you cannot communicate.  
+pymcprotocol is tested in Q-CPU.
+If you notice some bug, please raise issue or pull request.
 
 How to use pymcprotocol
 ==================================
@@ -141,7 +143,11 @@ You need to set upopen your PLC port to communicate by mcprotocol in Gxworks2 or
    
    pymcprotocol
 
+.. toctree::
+   :maxdepth: 2
 
+   pymcprotocol does not support entire MC protocol since it is very complicated and troublesome.
+   If you would like to use unsupported function, please tell me.
 
 Indices and tables
 ==================

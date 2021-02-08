@@ -66,15 +66,15 @@ class Type4E(Type3E):
              mc_data += self.subheader.to_bytes(2, "big")
         else:
             mc_data += format(self.subheader, "x").ljust(4, "0").upper().encode()
-        mc_data += self._encode_valuedata(self.subheaderserial, "short")
-        mc_data += self._encode_valuedata(0, "short")
-        mc_data += self._encode_valuedata(self.network, "byte")
-        mc_data += self._encode_valuedata(self.pc, "byte")
-        mc_data += self._encode_valuedata(self.dest_moduleio, "short")
-        mc_data += self._encode_valuedata(self.dest_modulesta, "byte")
+        mc_data += self._encode_value(self.subheaderserial, "short")
+        mc_data += self._encode_value(0, "short")
+        mc_data += self._encode_value(self.network, "byte")
+        mc_data += self._encode_value(self.pc, "byte")
+        mc_data += self._encode_value(self.dest_moduleio, "short")
+        mc_data += self._encode_value(self.dest_modulesta, "byte")
         #add self.timer size
-        mc_data += self._encode_valuedata(self._wordsize + len(requestdata), "short")
-        mc_data += self._encode_valuedata(self.timer, "short")
+        mc_data += self._encode_value(self._wordsize + len(requestdata), "short")
+        mc_data += self._encode_value(self.timer, "short")
         mc_data += requestdata
         return mc_data
 
