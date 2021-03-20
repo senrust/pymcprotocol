@@ -389,27 +389,10 @@ class Type3E:
             if self.commtype == const.COMMTYPE_BINARY:
                 if mode == "byte":
                     value_byte = value.to_bytes(1, "little", signed=True)
-                #bit device expression is strange endian
                 elif mode == "short":
-                    if devicetype == const.DeviceConstants.BIT_DEVICE:
-                        value_byte = bytes()
-                        big_byte = value.to_bytes(2, "big", signed=True) 
-                        #swap order
-                        value_byte += big_byte[1:2]
-                        value_byte += big_byte[0:1]
-                    else:
-                        value_byte = value.to_bytes(2, "little", signed=True)
+                    value_byte = value.to_bytes(2, "little", signed=True)
                 elif mode == "long":
-                    if devicetype == const.DeviceConstants.BIT_DEVICE:
-                        value_byte = bytes()
-                        big_byte = value.to_bytes(4, "big", signed=True) 
-                        #swap order
-                        value_byte += big_byte[3:4]
-                        value_byte += big_byte[2:3]
-                        value_byte += big_byte[1:2]
-                        value_byte += big_byte[0:1]
-                    else:    
-                        value_byte = value.to_bytes(4, "little", signed=True)
+                    value_byte = value.to_bytes(4, "little", signed=True)
                 else: 
                     raise ValueError("Please input value type")
             else:
@@ -823,7 +806,7 @@ class Type3E:
         request_data += self._encode_value(write_size, mode="byte")
         for bit_device, value in zip(bit_devices, values):
             request_data += self._make_devicedata(bit_device)
-            request_data += self._encode_devicevalue(value, bit_devices, mode="byte")
+            request_data += self._encode_devicevalue(value, bit_device, mode="byte")
         send_data = self._make_senddata(request_data)
                     
         #send mc data
