@@ -73,7 +73,7 @@ pymc3e.batchwrite_bitunits(headdevice="Y10", values=[0, 1, 0, 1, 0])
 word_values, dword_values = pymc3e.randomread(word_devices=["D1000", "D2000"], dword_devices=["D3000"])
 
 #write 1000 to "D1000", 2000 to "D2000" and 655362 todword "D3000"
-pymc3e.randomwrite(word_devices=["D1000", "D1002"], word_value=[1000, 2000], 
+pymc3e.randomwrite(word_devices=["D1000", "D1002"], word_values=[1000, 2000], 
                    dword_devices=["D1004"], dword_values=[655362])
 
 #write 1(ON) to "X0", 0(OFF) to "X10"
