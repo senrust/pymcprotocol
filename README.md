@@ -81,7 +81,28 @@ pymc3e.randomwrite_bitunits(bit_devices=["X0", "X10"], values=[1, 0])
 
 ```
 
-### 4. Remote Operation
+### 4.  Unlock and lock PLC
+```python
+
+#Unlock PLC,
+#If you set PLC to locked, you need to unlkock to remote operation
+#Except iQ-R, password is 4 character.
+pymc3e.remote_unlock(password="1234")
+#If you want to hide password from program
+#You can enter passwrod directly
+pymc3e.remote_unlock(request_input=True)
+
+#Lock PLC
+pymc3e.remote_lock(password="1234")
+pymc3e.remote_lock(request_input=True)
+```
+
+### 5. Remote Operation
+If you connect to your system by E71 module, Ethernet communication module,  
+These commands are available.  
+
+If you connect to PLC directly, C059 error returns.
+
 ```python
 
 #remote run, clear all device
@@ -103,24 +124,6 @@ pymc3e.remote_reset()
 cpu_type, cpu_code = pymc3e.read_cputype()
 
 ```
-
-
-### 5.  Unlock and lock PLC
-```python
-
-#Unlock PLC,
-#If you set PLC to locked, you need to unlkock to remote operation
-#Except iQ-R, password is 4 character.
-pymc3e.remote_unlock(password="1234")
-#If you want to hide password from program
-#You can enter passwrod directly
-pymc3e.remote_unlock(request_input=True)
-
-#Lock PLC
-pymc3e.remote_lock(password="1234")
-pymc3e.remote_lock(request_input=True)
-```
-
 
 ### API Reference
 API reference is depoloyed on here.  
