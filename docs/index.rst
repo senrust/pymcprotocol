@@ -97,10 +97,33 @@ You need to set upopen your PLC port to communicate by mcprotocol in Gxworks2 or
 
    #write 1(ON) to "X0", 0(OFF) to "X10"
    pymc3e.randomwrite_bitunits(bit_devices=["X0", "X10"], values=[1, 0])
-   
+
+
 
 4. Remote Operation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. code-block:: python
+
+   #Unlock PLC,
+   #If you set PLC to locked, you need to unlkock to remote operation
+   #Except iQ-R, password is 4 character.
+   pymc3e.remote_unlock(password="1234")
+   #If you want to hide password from program
+   #You can enter passwrod directly
+   pymc3e.remote_unlock(request_input=True)
+
+   #Lock PLC
+   pymc3e.remote_lock(password="1234")
+   pymc3e.remote_lock(request_input=True)
+
+
+5. Remote Operation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+If you connect to your system by E71 module, Ethernet communication module,
+These commands are available.
+If you connect to PLC directly, C059 error returns.
+
+
 .. code-block:: python
 
    #remote run, clear all device
@@ -121,23 +144,6 @@ You need to set upopen your PLC port to communicate by mcprotocol in Gxworks2 or
    #read PLC type
    cpu_type, cpu_code = pymc3e.read_cputype()
 
-
-5. Remote Operation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. code-block:: python
-
-   #Unlock PLC,
-   #If you set PLC to locked, you need to unlkock to remote operation
-   #Except iQ-R, password is 4 character.
-   pymc3e.remote_unlock(password="1234")
-   #If you want to hide password from program
-   #You can enter passwrod directly
-   pymc3e.remote_unlock(request_input=True)
-
-   #Lock PLC
-   pymc3e.remote_lock(password="1234")
-   pymc3e.remote_lock(request_input=True)
-
 .. toctree::
    :maxdepth: 2
    
@@ -146,8 +152,8 @@ You need to set upopen your PLC port to communicate by mcprotocol in Gxworks2 or
 .. toctree::
    :maxdepth: 2
 
-   pymcprotocol does not support entire MC protocol since it is very complicated and troublesome.
-   If you would like to use unsupported function, please tell me.
+pymcprotocol does not support entire MC protocol since it is very complicated and troublesome.
+If you would like to use unsupported function, please tell me.
 
 Indices and tables
 ==================
