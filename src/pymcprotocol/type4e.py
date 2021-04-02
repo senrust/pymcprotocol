@@ -1,9 +1,5 @@
 """This file implements mcprotocol 4E type communication.
 """
-
-import re
-import socket
-from . import mcprotocolerror
 from . import mcprotocolconst as const
 from .type3e import Type3E
 
@@ -19,7 +15,7 @@ class Type4E(Type3E):
     subheader       = 0x5400
     subheaderserial = 0X0000
 
-    def set_subheaderserial(self, subheaderserial):
+    def set_subheaderserial(self, subheaderserial: int):
         """Change subheader serial
 
         Args:
@@ -32,7 +28,7 @@ class Type4E(Type3E):
             raise ValueError("subheaderserial must be 0 <= subheaderserial <= 65535") 
         return None
 
-    def _get_answerdata_index(self):
+    def _get_answerdata_index(self) -> int:
         """Get answer data index from return data byte.
         4e type's data index is defferent from 3e type's.
         """
@@ -41,7 +37,7 @@ class Type4E(Type3E):
         else:
             return 30
 
-    def _get_answerstatus_index(self):
+    def _get_answerstatus_index(self) -> int:
         """Get command status index from return data byte.
         """
         if self.commtype == const.COMMTYPE_BINARY:
@@ -49,7 +45,7 @@ class Type4E(Type3E):
         else:
             return 26
 
-    def _make_senddata(self, requestdata):
+    def _make_senddata(self, requestdata: bytes) -> bytes:
         """Makes send mc protorocl data.
 
         Args:

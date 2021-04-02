@@ -28,7 +28,7 @@ class DeviceCodeError(Exception):
         devicename(str):    devicename. (ex: "Q", "P", both of them does not support mcprotocol.)
 
     """
-    def __init__(self, plctype, devicename):
+    def __init__(self, plctype: str, devicename: str):
         self.plctype = plctype
         self.devicename = devicename
 
@@ -98,7 +98,7 @@ class DeviceConstants:
         pass
     
     @staticmethod
-    def get_binary_devicecode(plctype, devicename):
+    def get_binary_devicecode(plctype: str, devicename: str) -> tuple[int, int]:
         """Static method that returns devicecode from device name.
 
         Args:
@@ -186,7 +186,7 @@ class DeviceConstants:
             raise DeviceCodeError(plctype, devicename)
 
     @staticmethod
-    def get_ascii_devicecode(plctype, devicename):
+    def get_ascii_devicecode(plctype: str, devicename: str) -> tuple[str, int]:
         """Static method that returns devicecode from device name.
 
         Args:
@@ -287,7 +287,7 @@ class DeviceConstants:
             raise DeviceCodeError(plctype, devicename)
 
     @staticmethod
-    def get_devicetype(plctype, devicename):
+    def get_devicetype(plctype: str, devicename: str) -> str:
         """Static method that returns device type "bit" or "wrod" type.
 
         Args:
