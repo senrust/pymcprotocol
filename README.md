@@ -8,7 +8,7 @@ pip install pymcprotocol
 ```
 
 ## Protocol type
-Now, pymcprotocol supports only mcprotocol 3E type.
+pymcprotocol supports only mcprotocol 3E type and test by QPLC.
 4E type is implemented. But not tested.
 1C~4C type is not suuported.
 
@@ -19,16 +19,24 @@ Now, pymcprotocol supports only mcprotocol 3E type.
 - iQ-L Series
 - iQ-R Series
 
-A series does not support 3E or 4E type.
-pymcprotocol is tested in Q-CPU.
-If you notice some bug, please raise issue or pull request.
+A and FX series are not supportted because they does not support 3E or 4E type.
 
 ## How to use mc protocol 
 ### 1. Set up PLC
-First, you need to set up PLC to open port for mcprotocol from Gxworks2 or Gxworks3.  
-- Open port you want to communicate.  
-- Select "Communication Data Code". If you select ascii type, you also need to set "ascii" in setaccessopt method. (default is "bainary")
-- If you would like to write in to PLC, you also have to check __Enable online change__
+You need to open PLC's port for mcprotocol by GxWorks2 or GxWorks3 software.
+1. Set IP address for PLC
+2. Open TCP port of PLC
+3. Set the port for mcprotocol.
+4. Restart PLC
+
+This page will help you.
+English: https://www.faweb.net/en/product/opc/plc/melsec/plc
+Japanese: https://qiita.com/satosisotas/items/38f64c872d161b612071
+
+#### Note: 
+- If you select ascii type communiation,  
+you also need to set "ascii" mode in setaccessopt method. (default is "bainary" mode)
+- If you would like to write data in PLC, you have to enable online change
 
 ### 2. Connect by Python
 ```python
@@ -126,12 +134,12 @@ cpu_type, cpu_code = pymc3e.read_cputype()
 ```
 
 ### API Reference
-API reference is depoloyed on here.  
+API manual is here.  
 https://pymcprotocol.netlify.app/
 
 ### Lisence 
-Lisence is MIT Lisence.
+pymcprotocol is Released under the MIT license.
 
 ### Caution
 pymcprotocol does not support entire MC protocol since it is very complicated and troublesome.
-If you would like to use unsupported function, please tell me.
+If you would like to use unsupported function, please make Github issue.
