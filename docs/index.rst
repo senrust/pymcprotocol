@@ -20,9 +20,9 @@ Installation
 
 Protocol type
 ==================================
-Now, pymcprotocol supports only mcprotocol 3E type.
-4E type is implemented. But not tested.
-1C~4C type is not suuported.
+| pymcprotocol supports only mcprotocol 3E type and test by QPLC.
+| 4E type is implemented. But not tested.
+| 1C~4C type is not suuported.
 
 Support PLC series
 ==================================
@@ -32,21 +32,28 @@ Support PLC series
 - iQ-L Series
 - iQ-R Series
 
-A series does not support 3E or 4E type.  
-So you cannot communicate.  
-pymcprotocol is tested in Q-CPU.
-If you notice some bug, please raise issue or pull request.
+A and FX series are not supportted because they does not support 3E or 4E type.
 
 How to use pymcprotocol
 ==================================
 
 1. Set up PLC
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-You need to set upopen your PLC port to communicate by mcprotocol in Gxworks2 or Gxworks3.  
+| You need to open PLC's port for mcprotocol by GxWorks2 or GxWorks3 software.
+| 1. Set IP address for PLC
+| 2. Open TCP port of PLC
+| 3. Set the port for mcprotocol.
+| 4. Restart PLC
 
-- Open port you want to communicate.  
-- Select "Communication Data Code". If you select ascii type, you also need to set "ascii" in setaccessopt method. (default is "bainary")
-- If you would like to write in to PLC, you also have to check __Enable online change__
+| This page will help you.
+| English: https://www.faweb.net/en/product/opc/plc/melsec/plc
+| Japanese: https://qiita.com/satosisotas/items/38f64c872d161b612071
+
+| Note: 
+| - If you select ascii type communiation,  
+| you also need to set "ascii" mode in setaccessopt method. (default is "bainary" mode)
+| - If you would like to write data in PLC, you have to enable online change
+
 
 2. Connect by Python
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -119,9 +126,9 @@ You need to set upopen your PLC port to communicate by mcprotocol in Gxworks2 or
 
 5. Remote Operation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-If you connect to your system by E71 module, Ethernet communication module,
-These commands are available.
-If you connect to PLC directly, C059 error returns.
+| If you connect to your system by E71 module, Ethernet communication module,
+| These commands are available.
+| If you connect to PLC directly, C059 error returns.
 
 
 .. code-block:: python
@@ -152,8 +159,16 @@ If you connect to PLC directly, C059 error returns.
 .. toctree::
    :maxdepth: 2
 
-pymcprotocol does not support entire MC protocol since it is very complicated and troublesome.
-If you would like to use unsupported function, please tell me.
+Caution
+==================
+
+| pymcprotocol does not support entire MC protocol since it is very complicated and troublesome.
+| If you would like to use unsupported function, please make Github issue.
+
+License
+==================
+
+pymcprotocol is Released under the MIT license.
 
 Indices and tables
 ==================
