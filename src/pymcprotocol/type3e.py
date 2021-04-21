@@ -139,9 +139,9 @@ class Type3E:
             send_data(bytes): mc protocol data
         
         """
+        if self._debug:
+            print(binascii.hexlify(send_data))
         if self._is_connected:
-            if self._debug:
-                print(binascii.hexlify(send_data))
             self._sock.send(send_data)
         else:
             self._is_connected = False
@@ -710,7 +710,11 @@ class Type3E:
         request_data += self._encode_value(write_size, mode="byte")
         for bit_device, value in zip(bit_devices, values):
             request_data += self._make_devicedata(bit_device)
-            request_data += self._encode_value(value, mode="byte", isSigned=True)
+            #byte value for iQ-R requires 2 byte data
+            if self.plctype == const.iQR_SERIES:
+                request_data += self._encode_value(value, mode="short", isSigned=True)
+            else:
+                request_data += self._encode_value(value, mode="byte", isSigned=True)
         send_data = self._make_senddata(request_data)
                     
         #send mc data
