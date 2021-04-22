@@ -806,7 +806,11 @@ class Type3E:
         request_data += self._encode_value(write_size, mode="byte")
         for bit_device, value in zip(bit_devices, values):
             request_data += self._make_devicedata(bit_device)
-            request_data += self._encode_devicevalue(value, bit_device, mode="byte")
+            #byte value for iQ-R requires 2 byte data
+            if self.plctype == const.iQR_SERIES:
+                request_data += self._encode_devicevalue(value, bit_device, mode="short")
+            else:
+                request_data += self._encode_devicevalue(value, bit_device, mode="byte")
         send_data = self._make_senddata(request_data)
                     
         #send mc data
