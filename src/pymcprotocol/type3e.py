@@ -5,17 +5,16 @@ import re
 import time
 import socket
 import binascii
-from typing import Optional, List, Tuple
 from . import mcprotocolerror
 from . import mcprotocolconst as const
 
-def isascii(text: str) -> bool:
+def isascii(text):
     """check text is all ascii character.
     Python 3.6 does not support str.isascii()
     """
     return all(ord(c) < 128 for c in text)
 
-def twos_comp(val: int, mode: str = "short") -> int:
+def twos_comp(val, mode="short"):
     """compute the 2's complement of int value val
     """
     if mode =="byte":
@@ -30,7 +29,7 @@ def twos_comp(val: int, mode: str = "short") -> int:
         val = val - (1 << bit)        # compute negative value
     return val  
 
-def get_device_number(device: str) -> str:
+def get_device_number(device):
     """Extract device number.
 
     Ex: "D1000" → "1000"
@@ -82,29 +81,28 @@ class Type3E:
                                 If PLC elapsed this time, PLC returns Timeout answer.
                                 Note: python socket timeout is always set timer+1sec. To recieve Timeout answer.
     """
-    plctype: str         = const.Q_SERIES
-    commtype: str        = const.COMMTYPE_BINARY
-    subheader: int       = 0x5000
-    network: int         = 0
-    pc: int              = 0xFF
-    dest_moduleio: int   = 0X3FF
-    dest_modulesta: int  = 0X0
-    timer: int           = 4
-    _is_connected: bool  = False
-    _SOCKBUFSIZE: int    = 4096
-    _wordsize: int       = 2 #how many byte is required to describe word value 
-                             #binary: 2, ascii:4.
-    _debug: bool          = False
+    plctype         = const.Q_SERIES
+    commtype        = const.COMMTYPE_BINARY
+    subheader       = 0x5000
+    network         = 0
+    pc              = 0xFF
+    dest_moduleio   = 0X3FF
+    dest_modulesta  = 0X0
+    timer           = 4
+    _is_connected   = False
+    _SOCKBUFSIZE    = 4096
+    _wordsize       = 2 #how many byte is required to describe word value 
+                        #binary: 2, ascii:4.
+    _debug          = False
 
 
-
-    def __init__(self, plctype: str ="Q") -> None:
+    def __init__(self, plctype ="Q"):
         """Constructor
 
         """
         self._set_plctype(plctype)
     
-    def _set_debug(self, debug: bool = False) -> None:
+    def _set_debug(self, debug=False):
         """Turn on debug mode
         """
         self._debug = debug
@@ -123,7 +121,6 @@ class Type3E:
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._sock.settimeout(self.timer+1)
         self._sock.connect((ip, port))
-        self._sock.settimeout(self.timer+1)
         self._is_connected = True
 
     def close(self):
@@ -133,7 +130,7 @@ class Type3E:
         self._sock.close()
         self._is_connected = False
 
-    def _send(self, send_data: bytes) -> None:
+    def _send(self, send_data):
         """send mc protorocl data 
 
         Args: 
@@ -147,7 +144,7 @@ class Type3E:
         else:
             raise Exception("socket is not connected. Please use connect method")
 
-    def _recv(self) -> bytes:
+    def _recv(self):
         """recieve mc protocol data
 
         Returns:
@@ -156,7 +153,7 @@ class Type3E:
         recv_data = self._sock.recv(self._SOCKBUFSIZE)
         return recv_data
 
-    def _set_plctype(self, plctype: str) -> None:
+    def _set_plctype(self, plctype):
         """Check PLC type. If plctype is vaild, set self.commtype.
 
         Args:
@@ -176,7 +173,7 @@ class Type3E:
         else:
             raise PLCTypeError()
 
-    def _set_commtype(self, commtype: str) -> None:
+    def _set_commtype(self, commtype):
         """Check communication type. If commtype is vaild, set self.commtype.
 
         Args:
@@ -192,7 +189,7 @@ class Type3E:
         else:
             raise CommTypeError()
 
-    def _get_answerdata_index(self) -> int:
+    def _get_answerdata_index(self):
         """Get answer data index from return data byte.
         """
         if self.commtype == const.COMMTYPE_BINARY:
@@ -200,7 +197,7 @@ class Type3E:
         else:
             return 22
 
-    def _get_answerstatus_index(self) -> int:
+    def _get_answerstatus_index(self):
         """Get command status index from return data byte.
         """
         if self.commtype == const.COMMTYPE_BINARY:
@@ -208,9 +205,9 @@ class Type3E:
         else:
             return 18
 
-    def setaccessopt(self, commtype: Optional[str] =None, network: Optional[int]=None, 
-                     pc: Optional[int]=None, dest_moduleio: Optional[int]=None, 
-                     dest_modulesta: Optional[int]=None, timer_sec: Optional[int]=None) -> None:
+    def setaccessopt(self, commtype=None, network=None, 
+                     pc=None, dest_moduleio=None, 
+                     dest_modulesta=None, timer_sec=None):
         """Set mc protocol access option.
 
         Args:
@@ -262,7 +259,7 @@ class Type3E:
                 raise ValueError("timer_sec must be 0 <= timer_sec <= 16383, / sec") 
         return None
     
-    def _make_senddata(self, requestdata: bytes) -> bytes:
+    def _make_senddata(self, requestdata):
         """Makes send mc protorocl data.
 
         Args:
@@ -289,7 +286,7 @@ class Type3E:
         mc_data += requestdata
         return mc_data
 
-    def _make_commanddata(self, command: int, subcommand: int) -> bytes:
+    def _make_commanddata(self, command, subcommand):
         """make mc protocol command and subcommand data
 
         Args:
@@ -305,7 +302,7 @@ class Type3E:
         command_data += self._encode_value(subcommand, "short")
         return command_data
     
-    def _make_devicedata(self, device: str) -> bytes:
+    def _make_devicedata(self, device):
         """make mc protocol device data. (device code and device number)
         
         Args:
@@ -344,7 +341,7 @@ class Type3E:
                 device_data += devicenum.rjust(6, "0").upper().encode()
         return device_data
 
-    def _encode_value(self, value: int, mode: str="short", isSigned: bool=False) -> bytes:
+    def _encode_value(self, value, mode="short", isSigned=False):
         """encode mc protocol value data to byte.
 
         Args: 
@@ -387,7 +384,7 @@ class Type3E:
             raise ValueError("Exceeeded Device value range")
         return value_byte
 
-    def _decode_value(self, byte: bytes, mode: str="short", isSigned: bool=False) -> int:
+    def _decode_value(self, byte, mode="short", isSigned=False):
         """decode byte to value
 
         Args: 
@@ -410,7 +407,7 @@ class Type3E:
             raise ValueError("Could not decode byte to value")
         return value
         
-    def _check_cmdanswer(self, recv_data: bytes) -> None:
+    def _check_cmdanswer(self, recv_data):
         """check command answer. If answer status is not 0, raise error according to answer  
 
         """
@@ -419,7 +416,7 @@ class Type3E:
         mcprotocolerror.check_mcprotocol_error(answerstatus)
         return None
 
-    def batchread_wordunits(self, headdevice: str, readsize: int) -> List[int]:
+    def batchread_wordunits(self, headdevice, readsize):
         """batch read in word units.
 
         Args:
@@ -448,7 +445,7 @@ class Type3E:
         recv_data = self._recv()
         self._check_cmdanswer(recv_data)
 
-        word_values: List[int] = []
+        word_values = []
         data_index = self._get_answerdata_index()
         for _ in range(readsize):
             wordvalue = self._decode_value(recv_data[data_index:data_index+self._wordsize], mode="short", isSigned=True)
@@ -456,7 +453,7 @@ class Type3E:
             data_index += self._wordsize
         return word_values
 
-    def batchread_bitunits(self, headdevice: str, readsize: int) -> List[int]:
+    def batchread_bitunits(self, headdevice, readsize):
         """batch read in bit units.
 
         Args:
@@ -485,7 +482,7 @@ class Type3E:
         recv_data = self._recv()
         self._check_cmdanswer(recv_data)
 
-        bit_values: List[int] = []
+        bit_values = []
         if self.commtype == const.COMMTYPE_BINARY:
             for i in range(readsize):
                 data_index = i//2 + self._get_answerdata_index()
@@ -505,7 +502,7 @@ class Type3E:
                 data_index += byte_range
         return bit_values
 
-    def batchwrite_wordunits(self, headdevice: str, values: List[int]) -> None:
+    def batchwrite_wordunits(self, headdevice, values):
         """batch write in word units.
 
         Args:
@@ -537,7 +534,7 @@ class Type3E:
 
         return None
 
-    def batchwrite_bitunits(self, headdevice: str, values: List[int]) -> None:
+    def batchwrite_bitunits(self, headdevice, values):
         """batch read in bit units.
 
         Args:
@@ -589,7 +586,7 @@ class Type3E:
 
         return None
 
-    def randomread(self, word_devices: List[str], dword_devices: List[str]) -> Tuple[List[int], List[int]]:
+    def randomread(self, word_devices, dword_devices):
         """read word units and dword units randomly.
         Moniter condition does not support.
 
@@ -627,8 +624,8 @@ class Type3E:
         recv_data = self._recv()
         self._check_cmdanswer(recv_data)
         data_index = self._get_answerdata_index()
-        word_values: List[int] = []
-        dword_values: List[int] = []
+        word_values= []
+        dword_values= []
         for word_device in word_devices:
             wordvalue = self._decode_value(recv_data[data_index:data_index+self._wordsize], mode="short", isSigned=True)
             word_values.append(wordvalue)
@@ -639,8 +636,8 @@ class Type3E:
             data_index += self._wordsize*2
         return word_values, dword_values
 
-    def randomwrite(self, word_devices: List[str], word_values: List[int],
-                    dword_devices: List[str], dword_values: List[int]) -> None:
+    def randomwrite(self, word_devices, word_values,
+                    dword_devices, dword_values):
         """write word units and dword units randomly.
 
         Args:
@@ -683,7 +680,7 @@ class Type3E:
         self._check_cmdanswer(recv_data)
         return None
 
-    def randomwrite_bitunits(self, bit_devices: List[str], values: List[int]) -> None:
+    def randomwrite_bitunits(self, bit_devices, values):
         """write bit units randomly.
 
         Args:
@@ -725,7 +722,7 @@ class Type3E:
 
         return None
 
-    def remote_run(self, clear_mode: int, force_exec: bool=False) -> None:
+    def remote_run(self, clear_mode, force_exec=False):
         """Run PLC
 
         Args:
@@ -761,7 +758,7 @@ class Type3E:
         self._check_cmdanswer(recv_data)
         return None
 
-    def remote_stop(self) -> None:
+    def remote_stop(self):
         """ Stop remotely.
 
         """
@@ -780,7 +777,7 @@ class Type3E:
         self._check_cmdanswer(recv_data)
         return None
 
-    def remote_pause(self, force_exec: bool=False) -> None:
+    def remote_pause(self, force_exec=False):
         """pause PLC remotely.
 
         Args:
@@ -810,7 +807,7 @@ class Type3E:
         self._check_cmdanswer(recv_data)
         return None
 
-    def remote_latchclear(self) -> None:
+    def remote_latchclear(self):
         """Clear latch remotely.
         PLC must be stop when use this command.
         """
@@ -831,7 +828,7 @@ class Type3E:
 
         return None
 
-    def remote_reset(self) -> None:
+    def remote_reset(self):
         """Reset remotely.
         PLC must be stop when use this command.
         
@@ -861,7 +858,7 @@ class Type3E:
             self.connect(self._ip, self._port)
         return None
 
-    def read_cputype(self) -> Tuple[str, str]:
+    def read_cputype(self):
         """Read CPU type
 
         Returns:
@@ -895,7 +892,7 @@ class Type3E:
             cpu_code = recv_data[data_index+cpu_name_length:].decode()
         return cpu_type, cpu_code
 
-    def remote_unlock(self, password: str="", request_input: bool=False) -> None:
+    def remote_unlock(self, password="", request_input=False):
         """Unlock PLC by inputting password.
 
         Args:
@@ -930,7 +927,7 @@ class Type3E:
         self._check_cmdanswer(recv_data)
         return None
 
-    def remote_lock(self, password: str="", request_input: bool=False) -> None:
+    def remote_lock(self, password="", request_input=False):
         """Lock PLC by inputting password.
 
         Args:
@@ -966,7 +963,7 @@ class Type3E:
         self._check_cmdanswer(recv_data)
         return None
 
-    def echo_test(self, echo_data: str) -> Tuple[int, str]:
+    def echo_test(self, echo_data):
         """Do echo test.
         Send data and answer data should be same.
 
