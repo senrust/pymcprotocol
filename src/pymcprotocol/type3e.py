@@ -526,7 +526,7 @@ class Type3E:
         request_data += self._make_devicedata(headdevice)
         request_data += self._encode_value(write_size)
         for value in values:
-            request_data += self._encode_value(value, headdevice, isSigned=True)
+            request_data += self._encode_value(value, isSigned=True)
         send_data = self._make_senddata(request_data)
 
         #send mc data
@@ -712,9 +712,9 @@ class Type3E:
             request_data += self._make_devicedata(bit_device)
             #byte value for iQ-R requires 2 byte data
             if self.plctype == const.iQR_SERIES:
-                request_data += self._encode_devicevalue(value, bit_device, mode="short")
+                request_data += self._encode_value(value, mode="short", isSigned=True)
             else:
-                request_data += self._encode_devicevalue(value, bit_device, mode="byte")
+                request_data += self._encode_value(value, mode="byte", isSigned=True)
         send_data = self._make_senddata(request_data)
                     
         #send mc data
