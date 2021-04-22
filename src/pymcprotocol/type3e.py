@@ -108,8 +108,8 @@ class Type3E:
         """Turn on debug mode
         """
         self._debug = debug
-    
-    def connect(self, ip: str, port: int) -> None:
+
+    def connect(self, ip, port):
         """Connect to PLC
 
         Args:
@@ -121,6 +121,7 @@ class Type3E:
         self._ip = ip
         self._port = port
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._sock.settimeout(self.timer+1)
         self._sock.connect((ip, port))
         self._sock.settimeout(self.timer+1)
         self._is_connected = True
@@ -144,8 +145,7 @@ class Type3E:
                 print(binascii.hexlify(send_data))
             self._sock.send(send_data)
         else:
-            self._is_connected = False
-            raise Exception("socket is not connected")
+            raise Exception("socket is not connected. Please use connect method")
 
     def _recv(self) -> bytes:
         """recieve mc protocol data

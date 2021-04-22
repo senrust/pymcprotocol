@@ -4,3 +4,4 @@ poetry.lock
 docs/_build/*
 *.ipynb
 .vscode
+.cache/
