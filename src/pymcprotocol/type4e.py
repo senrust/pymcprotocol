@@ -1,9 +1,5 @@
 """This file implements mcprotocol 4E type communication.
 """
-
-import re
-import socket
-from . import mcprotocolerror
 from . import mcprotocolconst as const
 from .type3e import Type3E
 

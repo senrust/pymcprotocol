@@ -7,18 +7,9 @@ QnA_SERIES  = "QnA"
 iQL_SERIES  = "iQ-L"
 iQR_SERIES  = "iQ-R"
 
-#command definition
-BATCHREAD_WORDUNITS     = 1
-BATCHREAD_BITUNITS      = 2
-BATCHWRITE_WORDUNITS    = 3
-BATCHWRITE_BITUNITS     = 4
-RANDOMREAD              = 5
-RANDOMWRITE             = 6
-RANDOMWRITE_BITUNITS    = 7
-
 #communication type
 COMMTYPE_BINARY = "binary"
-COMMTYPE_ASCII   = "ascii"
+COMMTYPE_ASCII  = "ascii"
 
 class DeviceCodeError(Exception):
     """devicecode error. Device is not exsist.
