@@ -5,12 +5,17 @@ import re
 import time
 import socket
 import binascii
-from typing import Optional
+from typing import Optional, List, Tuple
 from . import mcprotocolerror
 from . import mcprotocolconst as const
 
+def isascii(text: str) -> bool:
+    """check text is all ascii character.
+    Python 3.6 does not support str.isascii()
+    """
+    return all(ord(c) < 128 for c in text)
 
-def twos_comp(val: int, mode: str="short") -> int:
+def twos_comp(val: int, mode: str = "short") -> int:
     """compute the 2's complement of int value val
     """
     if mode =="byte":
@@ -414,7 +419,7 @@ class Type3E:
         mcprotocolerror.check_mcprotocol_error(answerstatus)
         return None
 
-    def batchread_wordunits(self, headdevice: str, readsize: int) -> list[int]:
+    def batchread_wordunits(self, headdevice: str, readsize: int) -> List[int]:
         """batch read in word units.
 
         Args:
@@ -443,7 +448,7 @@ class Type3E:
         recv_data = self._recv()
         self._check_cmdanswer(recv_data)
 
-        word_values: list[int] = []
+        word_values: List[int] = []
         data_index = self._get_answerdata_index()
         for _ in range(readsize):
             wordvalue = self._decode_value(recv_data[data_index:data_index+self._wordsize], mode="short", isSigned=True)
@@ -451,7 +456,7 @@ class Type3E:
             data_index += self._wordsize
         return word_values
 
-    def batchread_bitunits(self, headdevice: str, readsize: int) -> list[int]:
+    def batchread_bitunits(self, headdevice: str, readsize: int) -> List[int]:
         """batch read in bit units.
 
         Args:
@@ -480,7 +485,7 @@ class Type3E:
         recv_data = self._recv()
         self._check_cmdanswer(recv_data)
 
-        bit_values: list[int] = []
+        bit_values: List[int] = []
         if self.commtype == const.COMMTYPE_BINARY:
             for i in range(readsize):
                 data_index = i//2 + self._get_answerdata_index()
@@ -500,7 +505,7 @@ class Type3E:
                 data_index += byte_range
         return bit_values
 
-    def batchwrite_wordunits(self, headdevice: str, values: list[int]) -> None:
+    def batchwrite_wordunits(self, headdevice: str, values: List[int]) -> None:
         """batch write in word units.
 
         Args:
@@ -532,7 +537,7 @@ class Type3E:
 
         return None
 
-    def batchwrite_bitunits(self, headdevice: str, values: list[int]) -> None:
+    def batchwrite_bitunits(self, headdevice: str, values: List[int]) -> None:
         """batch read in bit units.
 
         Args:
@@ -584,7 +589,7 @@ class Type3E:
 
         return None
 
-    def randomread(self, word_devices: list[str], dword_devices: list[str]) -> tuple[list[int], list[int]]:
+    def randomread(self, word_devices: List[str], dword_devices: List[str]) -> Tuple[List[int], List[int]]:
         """read word units and dword units randomly.
         Moniter condition does not support.
 
@@ -622,8 +627,8 @@ class Type3E:
         recv_data = self._recv()
         self._check_cmdanswer(recv_data)
         data_index = self._get_answerdata_index()
-        word_values: list[int] = []
-        dword_values: list[int] = []
+        word_values: List[int] = []
+        dword_values: List[int] = []
         for word_device in word_devices:
             wordvalue = self._decode_value(recv_data[data_index:data_index+self._wordsize], mode="short", isSigned=True)
             word_values.append(wordvalue)
@@ -634,8 +639,8 @@ class Type3E:
             data_index += self._wordsize*2
         return word_values, dword_values
 
-    def randomwrite(self, word_devices: list[str], word_values: list[int],
-                    dword_devices: list[str], dword_values: list[int]) -> None:
+    def randomwrite(self, word_devices: List[str], word_values: List[int],
+                    dword_devices: List[str], dword_values: List[int]) -> None:
         """write word units and dword units randomly.
 
         Args:
@@ -678,7 +683,7 @@ class Type3E:
         self._check_cmdanswer(recv_data)
         return None
 
-    def randomwrite_bitunits(self, bit_devices: list[str], values: list[int]) -> None:
+    def randomwrite_bitunits(self, bit_devices: List[str], values: List[int]) -> None:
         """write bit units randomly.
 
         Args:
@@ -856,7 +861,7 @@ class Type3E:
             self.connect(self._ip, self._port)
         return None
 
-    def read_cputype(self) -> tuple[str, str]:
+    def read_cputype(self) -> Tuple[str, str]:
         """Read CPU type
 
         Returns:
@@ -900,7 +905,7 @@ class Type3E:
         """
         if request_input:
             password = input("Please enter password\n")
-        if password.isascii() is False:
+        if isascii(password) is False:
             raise ValueError("password must be only ascii code")
         if self.plctype is const.iQR_SERIES:
             if not (6 <= len(password) <= 32):
@@ -935,7 +940,7 @@ class Type3E:
         """
         if request_input:
             password = input("Please enter password\n")
-        if password.isascii() is False:
+        if isascii(password) is False:
             raise ValueError("password must be only ascii code")
         if self.plctype is const.iQR_SERIES:
             if not (6 <= len(password) <= 32):
@@ -961,7 +966,7 @@ class Type3E:
         self._check_cmdanswer(recv_data)
         return None
 
-    def echo_test(self, echo_data: str) -> tuple[int, str]:
+    def echo_test(self, echo_data: str) -> Tuple[int, str]:
         """Do echo test.
         Send data and answer data should be same.
 
