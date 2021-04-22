@@ -10,7 +10,7 @@ class MCProtocolError(Exception):
         devicename(str):    devicename. (ex: "Q", "P", both of them does not support mcprotocol.)
 
     """
-    def __init__(self, errorcode: int):
+    def __init__(self, errorcode):
         self.errorcode =  "0x" + format(errorcode, "x").rjust(4, "0").upper()
 
     def __str__(self):
@@ -28,7 +28,7 @@ class UnsupportedComandError(Exception):
                "If you connect with CPU module, please use E71 module."
 
     
-def check_mcprotocol_error(status: int) -> None:
+def check_mcprotocol_error(status):
     """Check mc protocol command error.
     If errot exist(status != 0), raise Error.
 
