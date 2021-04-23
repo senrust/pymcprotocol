@@ -1,8 +1,28 @@
-from pymcprotocol import Type3E
+import configparser
+try:
+    # pytest import
+    from src.pymcprotocol import Type3E
+except:
+    # relaticew import from parent directory
+    import sys
+    import os
+    sys.path.append(os.path.abspath(".."))
+    from src.pymcprotocol import Type3E
 
-def test_type3e():
+def get_config(ispytest=False):
+    #pytest execute this file in parent directory
+    ini = configparser.ConfigParser()
+    if ispytest:
+        ini.read('./tests/config.ini')
+    else:
+        ini.read('./config.ini')
+    ip = ini['settings']["ip"]
+    port = ini['settings'].getint("port")
+    return ip, port
+
+def type3e_test(ip, port):
     pyplc = Type3E()
-    pyplc.connect("192.168.1.203", 1025)
+    pyplc.connect(ip, port)
     # check batch access to word units
     pyplc.batchwrite_wordunits("D1000", [0, 1000, -1000])
     value = pyplc.batchread_wordunits("D1000", 3)
@@ -33,3 +53,13 @@ def test_type3e():
     word_values, dword_values = pyplc.randomread(["M40"], ["M40"])
     assert word_values == [1057]
     assert dword_values == [1049633]
+
+def test_pymcprotocol():
+    """test function for pytest
+    """
+    ip, port = get_config(ispytest=True)
+    type3e_test(ip, port)
+
+if __name__ == "__main__":
+    ip, port = get_config()
+    type3e_test(ip, port)
