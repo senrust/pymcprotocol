@@ -48,7 +48,7 @@ def type3e_test(plctype, ip, port):
     #test word access
     pyplc.batchwrite_bitunits("M30", [1, 1, 1, 1])
     value = pyplc.batchread_wordunits("M30", 1)
-    assert 15 == value
+    assert [15] == value
 
     # test random access
     pyplc.randomwrite(["D2000", "D2010", "D2020"], [-10, 0, 10], ["D2040", "D2050", "D2060", "D2070", "D2080"], [-10000000, -1, 0, 1, 10000000])
