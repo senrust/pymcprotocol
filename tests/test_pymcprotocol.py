@@ -2,20 +2,27 @@ import configparser
 try:
     # pytest import
     from src.pymcprotocol import Type3E
+    istestsdir = False
 except:
     # relative import from parent directory
     import sys
     import os
-    sys.path.append(os.path.abspath(".."))
-    from src.pymcprotocol import Type3E
+    try:
+        sys.path.append(os.path.abspath(".."))
+        from src.pymcprotocol import Type3E
+        istestsdir = True
+    except:
+        sys.path.append(os.path.abspath("."))
+        from src.pymcprotocol import Type3E
+        istestsdir = False
 
-def get_config(ispytest=False):
+def get_config(istestsdir=False):
     #pytest execute this file in parent directory
     ini = configparser.ConfigParser()
-    if ispytest:
-        ini.read('./tests/config.ini')
-    else:
+    if istestsdir:
         ini.read('./config.ini')
+    else:
+        ini.read('./tests/config.ini')
     plctype = ini['settings']["PLC"]
     ip = ini['settings']["ip"]
     port = ini['settings'].getint("port")
@@ -58,9 +65,9 @@ def type3e_test(plctype, ip, port):
 def test_pymcprotocol():
     """test function for pytest
     """
-    plctype, ip, port = get_config(ispytest=True)
+    plctype, ip, port = get_config(istestsdir)
     type3e_test(plctype, ip, port)
 
 if __name__ == "__main__":
-    plctype, ip, port = get_config()
+    plctype, ip, port = get_config(istestsdir)
     type3e_test(plctype, ip, port)
