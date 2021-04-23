@@ -3,7 +3,7 @@ try:
     # pytest import
     from src.pymcprotocol import Type3E
 except:
-    # relaticew import from parent directory
+    # relative import from parent directory
     import sys
     import os
     sys.path.append(os.path.abspath(".."))
@@ -16,12 +16,13 @@ def get_config(ispytest=False):
         ini.read('./tests/config.ini')
     else:
         ini.read('./config.ini')
+    plctype = ini['settings']["PLC"]
     ip = ini['settings']["ip"]
     port = ini['settings'].getint("port")
-    return ip, port
+    return plctype, ip, port
 
-def type3e_test(ip, port):
-    pyplc = Type3E()
+def type3e_test(plctype, ip, port):
+    pyplc = Type3E(plctype)
     pyplc.connect(ip, port)
     # check batch access to word units
     pyplc.batchwrite_wordunits("D1000", [0, 1000, -1000])
@@ -57,9 +58,9 @@ def type3e_test(ip, port):
 def test_pymcprotocol():
     """test function for pytest
     """
-    ip, port = get_config(ispytest=True)
-    type3e_test(ip, port)
+    plctype, ip, port = get_config(ispytest=True)
+    type3e_test(plctype, ip, port)
 
 if __name__ == "__main__":
-    ip, port = get_config()
-    type3e_test(ip, port)
+    plctype, ip, port = get_config()
+    type3e_test(plctype, ip, port)
