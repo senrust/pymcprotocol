@@ -15,7 +15,7 @@ class Type4E(Type3E):
     subheader       = 0x5400
     subheaderserial = 0X0000
 
-    def set_subheaderserial(self, subheaderserial):
+    def set_subheaderserial(self, subheaderserial: int) -> None:
         """Change subheader serial
 
         Args:
@@ -45,7 +45,7 @@ class Type4E(Type3E):
         else:
             return 26
 
-    def _make_senddata(self, requestdata):
+    def _make_senddata(self, requestdata: bytes) -> bytes:
         """Makes send mc protorocl data.
 
         Args:

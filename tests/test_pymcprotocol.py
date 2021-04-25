@@ -16,7 +16,7 @@ except:
         from src.pymcprotocol import Type3E
         istestsdir = False
 
-def get_config(istestsdir=False):
+def get_config(istestsdir: bool =False):
     #pytest execute this file in parent directory
     ini = configparser.ConfigParser()
     if istestsdir:
@@ -28,7 +28,7 @@ def get_config(istestsdir=False):
     port = ini['settings'].getint("port")
     return plctype, ip, port
 
-def type3e_test(plctype, ip, port):
+def type3e_test(plctype: str, ip: str, port: int):
     pyplc = Type3E(plctype)
     pyplc.connect(ip, port)
     # check batch access to word units

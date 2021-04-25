@@ -1,15 +1,17 @@
 """This file defines mcprotocol constant.
 """
+from typing import Tuple
+
 #PLC definetion
-Q_SERIES    = "Q"
-L_SERIES    = "L"
-QnA_SERIES  = "QnA"
-iQL_SERIES  = "iQ-L"
-iQR_SERIES  = "iQ-R"
+Q_SERIES: str    = "Q"
+L_SERIES: str    = "L"
+QnA_SERIES: str  = "QnA"
+iQL_SERIES: str  = "iQ-L"
+iQR_SERIES: str  = "iQ-R"
 
 #communication type
-COMMTYPE_BINARY = "binary"
-COMMTYPE_ASCII  = "ascii"
+COMMTYPE_BINARY: str = "binary"
+COMMTYPE_ASCII: str  = "ascii"
 
 class DeviceCodeError(Exception):
     """devicecode error. Device is not exsist.
@@ -19,7 +21,7 @@ class DeviceCodeError(Exception):
         devicename(str):    devicename. (ex: "Q", "P", both of them does not support mcprotocol.)
 
     """
-    def __init__(self, plctype, devicename):
+    def __init__(self, plctype: str, devicename: str):
         self.plctype = plctype
         self.devicename = devicename
 
@@ -89,7 +91,7 @@ class DeviceConstants:
         pass
     
     @staticmethod
-    def get_binary_devicecode(plctype, devicename):
+    def get_binary_devicecode(plctype: str, devicename: str) -> Tuple[int, int]:
         """Static method that returns devicecode from device name.
 
         Args:
@@ -177,7 +179,7 @@ class DeviceConstants:
             raise DeviceCodeError(plctype, devicename)
 
     @staticmethod
-    def get_ascii_devicecode(plctype, devicename):
+    def get_ascii_devicecode(plctype: str, devicename: str) -> Tuple[str, int]:
         """Static method that returns devicecode from device name.
 
         Args:
@@ -278,7 +280,7 @@ class DeviceConstants:
             raise DeviceCodeError(plctype, devicename)
 
     @staticmethod
-    def get_devicetype(plctype, devicename):
+    def get_devicetype(plctype: str, devicename: str) -> str:
         """Static method that returns device type "bit" or "wrod" type.
 
         Args:
