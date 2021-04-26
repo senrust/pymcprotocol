@@ -88,7 +88,8 @@ class Type3E:
     pc              = 0xFF
     dest_moduleio   = 0X3FF
     dest_modulesta  = 0X0
-    timer           = 4
+    timer           = 4 # MC protocol timeout. 250msec * 4 = 1 sec 
+    soc_timeout     = 2 # 2 sec
     _is_connected   = False
     _SOCKBUFSIZE    = 4096
     _wordsize       = 2 #how many byte is required to describe word value 
@@ -119,7 +120,7 @@ class Type3E:
         self._ip = ip
         self._port = port
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._sock.settimeout(self.timer+1)
+        self._sock.settimeout(self.soc_timeout)
         self._sock.connect((ip, port))
         self._is_connected = True
 
@@ -255,6 +256,9 @@ class Type3E:
                 timer_250msec = 4 * timer_sec
                 timer_250msec.to_bytes(2, "little")
                 self.timer = timer_250msec
+                self.soc_timeout = timer_sec + 1
+                if self._is_connected:
+                    self._sock.settimeout(self.soc_timeout)
             except:
                 raise ValueError("timer_sec must be 0 <= timer_sec <= 16383, / sec") 
         return None
