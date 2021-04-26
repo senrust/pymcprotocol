@@ -101,6 +101,7 @@ class Type3E:
         self._ip = ip
         self._port = port
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._sock.settimeout(self.timer+1)
         self._sock.connect((ip, port))
         self._is_connected = True
 
