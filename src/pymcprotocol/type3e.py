@@ -2,12 +2,19 @@
 """
 
 import re
+import time
 import socket
+import binascii
 from . import mcprotocolerror
 from . import mcprotocolconst as const
 
+def isascii(text):
+    """check text is all ascii character.
+    Python 3.6 does not support str.isascii()
+    """
+    return all(ord(c) < 128 for c in text)
 
-def twos_comp(val:int, mode:str="short"):
+def twos_comp(val, mode="short"):
     """compute the 2's complement of int value val
     """
     if mode =="byte":
@@ -21,6 +28,20 @@ def twos_comp(val:int, mode:str="short"):
     if (val & (1 << (bit - 1))) != 0: # if sign bit is set e.g., 8bit: 128-255
         val = val - (1 << bit)        # compute negative value
     return val  
+
+def get_device_number(device):
+    """Extract device number.
+
+    Ex: "D1000" → "1000"
+        "X0x1A" → "0x1A
+    """
+    device_num = re.search(r"\d.*", device)
+    if device_num is None:
+        raise ValueError("Invalid device number, {}".format(device))
+    else:
+        device_num_str = device_num.group(0)
+    return device_num_str
+
 
 class CommTypeError(Exception):
     """Communication type error. Communication type must be "binary" or "ascii"
@@ -67,18 +88,16 @@ class Type3E:
     pc              = 0xFF
     dest_moduleio   = 0X3FF
     dest_modulesta  = 0X0
-    timer           = 4
-    _sock           = None
+    timer           = 4 # MC protocol timeout. 250msec * 4 = 1 sec 
+    soc_timeout     = 2 # 2 sec
     _is_connected   = False
     _SOCKBUFSIZE    = 4096
-    _currentcmd     = None
     _wordsize       = 2 #how many byte is required to describe word value 
                         #binary: 2, ascii:4.
-    _DEBUG          = False
+    _debug          = False
 
 
-
-    def __init__(self, plctype="Q"):
+    def __init__(self, plctype ="Q"):
         """Constructor
 
         """
@@ -87,8 +106,8 @@ class Type3E:
     def _set_debug(self, debug=False):
         """Turn on debug mode
         """
-        self._DEBUG = debug
-    
+        self._debug = debug
+
     def connect(self, ip, port):
         """Connect to PLC
 
@@ -101,6 +120,7 @@ class Type3E:
         self._ip = ip
         self._port = port
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._sock.settimeout(self.soc_timeout)
         self._sock.connect((ip, port))
         self._is_connected = True
 
@@ -119,10 +139,11 @@ class Type3E:
         
         """
         if self._is_connected:
-            self._sock.settimeout(self.timer+1)
+            if self._debug:
+                print(binascii.hexlify(send_data))
             self._sock.send(send_data)
         else:
-            raise Exception("socket is not connected")
+            raise Exception("socket is not connected. Please use connect method")
 
     def _recv(self):
         """recieve mc protocol data
@@ -132,26 +153,6 @@ class Type3E:
         """
         recv_data = self._sock.recv(self._SOCKBUFSIZE)
         return recv_data
-
-    def _interpret_device(self, device):
-        """Get device code and device number.
-        device number is converted to base number for each device.
-
-        Args:
-            device(str):    device. (ex: "D1000", "Y1")
-
-        Returns:
-            devicecode(str or int): if self.commtype is ascii, returns str devicode, else, returns int devicode
-            devicenum(str or int):  if self.commtype is ascii, returns str devicenum, else, returns int devicenum
-        """
-        devicetype =  re.search(r"\D+", device).group(0)
-        if self.commtype == const.COMMTYPE_BINARY:
-            devicecode, devicebase = const.DeviceConstants.get_binary_devicecode(self.plctype, devicetype)
-            devicenum = int(re.search(r"\d.*", device).group(0), devicebase)
-        else:
-            devicecode, _ = const.DeviceConstants.get_ascii_devicecode(self.plctype, devicetype)
-            devicenum = re.search(r"\d.*", device).group(0)
-        return devicecode, devicenum
 
     def _set_plctype(self, plctype):
         """Check PLC type. If plctype is vaild, set self.commtype.
@@ -205,7 +206,9 @@ class Type3E:
         else:
             return 18
 
-    def setaccessopt(self, commtype=None, network=None, pc=None, dest_moduleio=None, dest_modulesta=None, timer_sec=None):
+    def setaccessopt(self, commtype=None, network=None, 
+                     pc=None, dest_moduleio=None, 
+                     dest_modulesta=None, timer_sec=None):
         """Set mc protocol access option.
 
         Args:
@@ -253,6 +256,9 @@ class Type3E:
                 timer_250msec = 4 * timer_sec
                 timer_250msec.to_bytes(2, "little")
                 self.timer = timer_250msec
+                self.soc_timeout = timer_sec + 1
+                if self._is_connected:
+                    self._sock.settimeout(self.soc_timeout)
             except:
                 raise ValueError("timer_sec must be 0 <= timer_sec <= 16383, / sec") 
         return None
@@ -310,9 +316,18 @@ class Type3E:
             device_data(bytes): device data
             
         """
+        
         device_data = bytes()
-        devicecode, devicenum = self._interpret_device(device)
-        if self.commtype is const.COMMTYPE_BINARY:
+
+        devicetype = re.search(r"\D+", device)
+        if devicetype is None:
+            raise ValueError("Invalid device ")
+        else:
+            devicetype = devicetype.group(0)      
+
+        if self.commtype == const.COMMTYPE_BINARY:
+            devicecode, devicebase = const.DeviceConstants.get_binary_devicecode(self.plctype, devicetype)
+            devicenum = int(get_device_number(device), devicebase)
             if self.plctype is const.iQR_SERIES:
                 device_data += devicenum.to_bytes(4, "little")
                 device_data += devicecode.to_bytes(2, "little")
@@ -320,6 +335,8 @@ class Type3E:
                 device_data += devicenum.to_bytes(3, "little")
                 device_data += devicecode.to_bytes(1, "little")
         else:
+            devicecode, devicebase = const.DeviceConstants.get_ascii_devicecode(self.plctype, devicetype)
+            devicenum = str(int(get_device_number(device), devicebase))
             if self.plctype is const.iQR_SERIES:
                 device_data += devicecode.encode()
                 device_data += devicenum.rjust(8, "0").upper().encode()
@@ -371,57 +388,12 @@ class Type3E:
             raise ValueError("Exceeeded Device value range")
         return value_byte
 
-    def _encode_devicevalue(self, value, device, mode="short"):
-        """encode mc protocol device value data to bytes.
-
-        Args: 
-            value(int):   readsize, write value, and so on.
-            device(str):  device
-            mode(str):    value type.
-
-        Returns:
-            value_byte(bytes):  value data
-        
-        """
-        devicename =  re.search(r"\D+", device).group(0)
-        devicetype = const.DeviceConstants.get_devicetype(self.plctype, devicename)
-        try:
-            if self.commtype == const.COMMTYPE_BINARY:
-                if mode == "byte":
-                    value_byte = value.to_bytes(1, "little", signed=True)
-                elif mode == "short":
-                    value_byte = value.to_bytes(2, "little", signed=True)
-                elif mode == "long":
-                    value_byte = value.to_bytes(4, "little", signed=True)
-                else: 
-                    raise ValueError("Please input value type")
-            else:
-                #check value range by to_bytes
-                #convert to unsigned value
-                if mode == "byte":
-                    value.to_bytes(1, "little", signed=True)
-                    value = value & 0xff
-                    value_byte = format(value, "x").rjust(2, "0").upper().encode()
-                elif mode == "short":
-                    value.to_bytes(2, "little", signed=True)
-                    value = value & 0xffff
-                    value_byte = format(value, "x").rjust(4, "0").upper().encode()
-                elif mode == "long":
-                    value.to_bytes(4, "little", signed=True)
-                    value = value & 0xffffffff
-                    value_byte = format(value, "x").rjust(8, "0").upper().encode()
-                else: 
-                    raise ValueError("Please input value type")
-        except:
-            raise ValueError("Exceeeded Device value range")
-        return value_byte
-
     def _decode_value(self, byte, mode="short", isSigned=False):
         """decode byte to value
 
         Args: 
-            value(int):   readsize, write value, and so on.
-            mode(str):    value type.
+            byte(bytes):    readsize, write value, and so on.
+            mode(str):      value type.
             isSigned(bool): convert as sigend value  
 
         Returns:
@@ -435,49 +407,6 @@ class Type3E:
                 value = int(byte.decode(), 16)
                 if isSigned:
                     value = twos_comp(value, mode)
-        except:
-            raise ValueError("Could not decode byte to value")
-        return value
-
-    def _decode_devicevalue(self, byte, device, mode="short"):
-        """decode device data byte to value
-
-        Args: 
-            value(int):   readsize, write value, and so on.
-            device(str):  device name
-            mode(str):    value type.
-
-        Returns:
-            value_data(int):  value data
-        
-        """
-        devicename =  re.search(r"\D+", device).group(0)
-        devicetype = const.DeviceConstants.get_devicetype(self.plctype, devicename)
-        try:
-            if self.commtype == const.COMMTYPE_BINARY:
-                if devicetype == const.DeviceConstants.BIT_DEVICE:
-                    if mode == "byte":
-                        value =int.from_bytes(byte, "big", signed = True)
-                    elif mode == "short":
-                        value_byte = bytes()
-                        value_byte += byte[1:2]
-                        value_byte += byte[0:1]
-                        value =int.from_bytes(value_byte, "big", signed = True)
-                    elif mode == "long":
-                        value_byte = bytes()
-                        value_byte += byte[3:4]
-                        value_byte += byte[2:3]
-                        value_byte += byte[1:2]
-                        value_byte += byte[0:1]
-                        value =int.from_bytes(value_byte, "big", signed = True)
-                    else: 
-                        raise ValueError("Please input value type")
-                else:
-                    value =int.from_bytes(byte, "little", signed = True)
-            else:
-                value = int(byte.decode(), 16)
-                value = twos_comp(value, mode)
-
         except:
             raise ValueError("Could not decode byte to value")
         return value
@@ -502,7 +431,6 @@ class Type3E:
             wordunits_values(list[int]):  word units value list
 
         """
-        self._currentcmd = const.BATCHREAD_WORDUNITS
         command = 0x0401
         if self.plctype == const.iQR_SERIES:
             subcommand = 0x0002
@@ -516,10 +444,7 @@ class Type3E:
         send_data = self._make_senddata(request_data)
 
         #send mc data
-        if self._DEBUG:
-            return send_data    
-        else:
-            self._send(send_data)
+        self._send(send_data)
         #reciev mc data
         recv_data = self._recv()
         self._check_cmdanswer(recv_data)
@@ -527,7 +452,7 @@ class Type3E:
         word_values = []
         data_index = self._get_answerdata_index()
         for _ in range(readsize):
-            wordvalue = self._decode_devicevalue(recv_data[data_index:data_index+self._wordsize], headdevice, mode="short")
+            wordvalue = self._decode_value(recv_data[data_index:data_index+self._wordsize], mode="short", isSigned=True)
             word_values.append(wordvalue)
             data_index += self._wordsize
         return word_values
@@ -543,7 +468,6 @@ class Type3E:
             bitunits_values(list[int]):  bit units value(0 or 1) list
 
         """
-        self._currentcmd = const.BATCHREAD_BITUNITS
         command = 0x0401
         if self.plctype == const.iQR_SERIES:
             subcommand = 0x0003
@@ -557,10 +481,7 @@ class Type3E:
         send_data = self._make_senddata(request_data)
 
         #send mc data
-        if self._DEBUG:
-            return send_data   
-        else:
-            self._send(send_data)
+        self._send(send_data)
         #reciev mc data
         recv_data = self._recv()
         self._check_cmdanswer(recv_data)
@@ -595,7 +516,6 @@ class Type3E:
         """
         write_size = len(values)
 
-        self._currentcmd = const.BATCHWRITE_WORDUNITS
         command = 0x1401
         if self.plctype == const.iQR_SERIES:
             subcommand = 0x0002
@@ -607,14 +527,11 @@ class Type3E:
         request_data += self._make_devicedata(headdevice)
         request_data += self._encode_value(write_size)
         for value in values:
-            request_data += self._encode_devicevalue(value, headdevice)
+            request_data += self._encode_value(value, isSigned=True)
         send_data = self._make_senddata(request_data)
 
         #send mc data
-        if self._DEBUG:
-            return send_data   
-        else:
-            self._send(send_data)
+        self._send(send_data)
         #reciev mc data
         recv_data = self._recv()
         self._check_cmdanswer(recv_data)
@@ -635,7 +552,6 @@ class Type3E:
             if not (value == 0 or value == 1): 
                 raise ValueError("Each value must be 0 or 1. 0 is OFF, 1 is ON.")
 
-        self._currentcmd = const.BATCHWRITE_BITUNITS
         command = 0x1401
         if self.plctype == const.iQR_SERIES:
             subcommand = 0x0003
@@ -667,10 +583,7 @@ class Type3E:
         send_data = self._make_senddata(request_data)
                     
         #send mc data
-        if self._DEBUG:
-            return send_data   
-        else:
-            self._send(send_data)
+        self._send(send_data)
         #reciev mc data
         recv_data = self._recv()
         self._check_cmdanswer(recv_data)
@@ -690,7 +603,6 @@ class Type3E:
             dword_values(list[int]):    dword units value list
 
         """
-        self._currentcmd = const.RANDOMREAD
         command = 0x0403
         if self.plctype == const.iQR_SERIES:
             subcommand = 0x0002
@@ -711,27 +623,25 @@ class Type3E:
         send_data = self._make_senddata(request_data)
 
         #send mc data
-        if self._DEBUG:
-            return send_data   
-        else:
-            self._send(send_data)
+        self._send(send_data)
         #reciev mc data
         recv_data = self._recv()
         self._check_cmdanswer(recv_data)
         data_index = self._get_answerdata_index()
-        word_values = []
-        dword_values = []
+        word_values= []
+        dword_values= []
         for word_device in word_devices:
-            wordvalue = self._decode_devicevalue(recv_data[data_index:data_index+self._wordsize], word_device, mode="short")
+            wordvalue = self._decode_value(recv_data[data_index:data_index+self._wordsize], mode="short", isSigned=True)
             word_values.append(wordvalue)
             data_index += self._wordsize
         for dword_device in dword_devices:
-            dwordvalue = self._decode_devicevalue(recv_data[data_index:data_index+self._wordsize*2], dword_device, mode="long")
+            dwordvalue = self._decode_value(recv_data[data_index:data_index+self._wordsize*2], mode="long", isSigned=True)
             dword_values.append(dwordvalue)
             data_index += self._wordsize*2
         return word_values, dword_values
 
-    def randomwrite(self, word_devices, word_values, dword_devices, dword_values):
+    def randomwrite(self, word_devices, word_values,
+                    dword_devices, dword_values):
         """write word units and dword units randomly.
 
         Args:
@@ -749,7 +659,6 @@ class Type3E:
         word_size = len(word_devices)
         dword_size = len(dword_devices)
 
-        self._currentcmd = const.RANDOMWRITE
         command = 0x1402
         if self.plctype == const.iQR_SERIES:
             subcommand = 0x0002
@@ -762,17 +671,14 @@ class Type3E:
         request_data += self._encode_value(dword_size, mode="byte")
         for word_device, word_value in zip(word_devices, word_values):
             request_data += self._make_devicedata(word_device)
-            request_data += self._encode_devicevalue(word_value, word_device, mode="short")
+            request_data += self._encode_value(word_value, mode="short", isSigned=True)
         for dword_device, dword_value in zip(dword_devices, dword_values):
             request_data += self._make_devicedata(dword_device)   
-            request_data += self._encode_devicevalue(dword_value, dword_device, mode="long")     
+            request_data += self._encode_value(dword_value, mode="long", isSigned=True)     
         send_data = self._make_senddata(request_data)
 
         #send mc data
-        if self._DEBUG:
-            return send_data   
-        else:
-            self._send(send_data)
+        self._send(send_data)
         #reciev mc data
         recv_data = self._recv()
         self._check_cmdanswer(recv_data)
@@ -794,7 +700,6 @@ class Type3E:
             if not (value == 0 or value == 1): 
                 raise ValueError("Each value must be 0 or 1. 0 is OFF, 1 is ON.")
 
-        self._currentcmd = const.RANDOMWRITE_BITUNITS
         command = 0x1402
         if self.plctype == const.iQR_SERIES:
             subcommand = 0x0003
@@ -808,16 +713,13 @@ class Type3E:
             request_data += self._make_devicedata(bit_device)
             #byte value for iQ-R requires 2 byte data
             if self.plctype == const.iQR_SERIES:
-                request_data += self._encode_devicevalue(value, bit_device, mode="short")
+                request_data += self._encode_value(value, mode="short", isSigned=True)
             else:
-                request_data += self._encode_devicevalue(value, bit_device, mode="byte")
+                request_data += self._encode_value(value, mode="byte", isSigned=True)
         send_data = self._make_senddata(request_data)
                     
         #send mc data
-        if self._DEBUG:
-            return send_data   
-        else:
-            self._send(send_data)
+        self._send(send_data)
         #reciev mc data
         recv_data = self._recv()
         self._check_cmdanswer(recv_data)
@@ -853,10 +755,7 @@ class Type3E:
         send_data = self._make_senddata(request_data)
 
         #send mc data
-        if self._DEBUG:
-            return send_data   
-        else:
-            self._send(send_data)
+        self._send(send_data)
         
         #reciev mc data
         recv_data = self._recv()
@@ -876,10 +775,7 @@ class Type3E:
         send_data = self._make_senddata(request_data)
 
         #send mc data
-        if self._DEBUG:
-            return send_data   
-        else:
-            self._send(send_data)
+        self._send(send_data)
         #reciev mc data
         recv_data = self._recv()
         self._check_cmdanswer(recv_data)
@@ -909,10 +805,7 @@ class Type3E:
         send_data = self._make_senddata(request_data)
 
         #send mc data
-        if self._DEBUG:
-            return send_data   
-        else:
-            self._send(send_data)
+        self._send(send_data)
         #reciev mc data
         recv_data = self._recv()
         self._check_cmdanswer(recv_data)
@@ -932,10 +825,7 @@ class Type3E:
         send_data = self._make_senddata(request_data)
 
         #send mc data
-        if self._DEBUG:
-            return send_data   
-        else:
-            self._send(send_data)
+        self._send(send_data)
         #reciev mc data
         recv_data = self._recv()
         self._check_cmdanswer(recv_data)
@@ -957,17 +847,19 @@ class Type3E:
         send_data = self._make_senddata(request_data)
 
         #send mc data
-        if self._DEBUG:
-            return send_data   
-        else:
-            self._send(send_data)
+        self._send(send_data)
         #reciev mc data
-        #set time out 1 seconds. Because remote reset may not return data
+        #set time out 1 seconds. Because remote reset may not return data since clone socket
         try:
+            self._sock.settimeout(1)
             recv_data = self._recv()
             self._check_cmdanswer(recv_data)
         except:
-            pass
+            self._is_connected = False
+            # after wait 1 sec
+            # try reconnect
+            time.sleep(1)
+            self.connect(self._ip, self._port)
         return None
 
     def read_cputype(self):
@@ -987,10 +879,7 @@ class Type3E:
         send_data = self._make_senddata(request_data)
 
         #send mc data
-        if self._DEBUG:
-            return send_data   
-        else:
-            self._send(send_data)
+        self._send(send_data)
         #reciev mc data
         recv_data = self._recv()
         self._check_cmdanswer(recv_data)
@@ -1017,7 +906,7 @@ class Type3E:
         """
         if request_input:
             password = input("Please enter password\n")
-        if password.isascii() is False:
+        if isascii(password) is False:
             raise ValueError("password must be only ascii code")
         if self.plctype is const.iQR_SERIES:
             if not (6 <= len(password) <= 32):
@@ -1036,11 +925,7 @@ class Type3E:
 
         send_data = self._make_senddata(request_data)
 
-        #send mc data
-        if self._DEBUG:
-            return send_data   
-        else:
-            self._send(send_data)
+        self._send(send_data)
         #reciev mc data
         recv_data = self._recv()
         self._check_cmdanswer(recv_data)
@@ -1056,7 +941,7 @@ class Type3E:
         """
         if request_input:
             password = input("Please enter password\n")
-        if password.isascii() is False:
+        if isascii(password) is False:
             raise ValueError("password must be only ascii code")
         if self.plctype is const.iQR_SERIES:
             if not (6 <= len(password) <= 32):
@@ -1076,47 +961,41 @@ class Type3E:
         send_data = self._make_senddata(request_data)
 
         #send mc data
-        if self._DEBUG:
-            return send_data   
-        else:
-            self._send(send_data)
+        self._send(send_data)
         #reciev mc data
         recv_data = self._recv()
         self._check_cmdanswer(recv_data)
         return None
 
-    def echo_test(self, send_data):
+    def echo_test(self, echo_data):
         """Do echo test.
         Send data and answer data should be same.
 
         Args:
-            send_data(str):     send data to PLC
+            echo_data(str):     send data to PLC
 
         Returns:
             answer_len(int):    answer data length from PLC
             answer_data(str):   answer data from PLC
 
         """
-        if send_data.isascii() is False:
-            raise ValueError("send_data must be only ascii code")
-        if not ( 1 <= len(send_data) <= 960):
-            raise ValueError("send_data length must be from 1 to 960")
+        if echo_data.isalnum() is False:
+            raise ValueError("echo_data must be only alphabet or digit code")
+        if not ( 1 <= len(echo_data) <= 960):
+            raise ValueError("echo_data length must be from 1 to 960")
 
         command = 0x0619
         subcommand = 0x0000
 
         request_data = bytes()
         request_data += self._make_commanddata(command, subcommand)
-        request_data += self._encode_value(len(send_data), mode="short") 
-        request_data += send_data.encode()
+        request_data += self._encode_value(len(echo_data), mode="short") 
+        request_data += echo_data.encode()
 
         send_data = self._make_senddata(request_data)
 
         #send mc data
-        if self._DEBUG:
-            return send_data   
-        else:
-            self._send(send_data)
+        self._send(send_data)
         #reciev mc data
         recv_data = self._recv()
         self._check_cmdanswer(recv_data)
