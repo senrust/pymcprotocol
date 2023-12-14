@@ -2,6 +2,18 @@
 MC protocol(MELSEC Communication Protocol) implementation by Python.  
 MC protocol enables you to operate PLC from computer.
 
+# Sponsor
+pymcptorocol is sponsored by [Proxima Technology Inc.](https://proxima-ai-tech.com/)  
+
+![Proxima Technology Inc.](./Proxima.png "Proxima Technology Inc.")
+
+Proxima Technology Inc. is an AI startup company that aims at social implementation of mathematics and as a part of it, aims to privatize model predictive control. Their mission is to change society with the power of mathematical science.
+
+このプロジェクトはProxima Technology様よりご支援を頂いております。  
+Proxima Technology（プロキシマテクノロジー）は数学の社会実装を⽬指し、その⼀環としてモデル予測制御の⺠主化を掲げているAIスタートアップ企業です。数理科学の⼒で社会を変えることを企業の使命としています。  
+
+
+
 ## Installation 
 ```console 
 pip install pymcprotocol
