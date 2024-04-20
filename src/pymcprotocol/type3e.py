@@ -108,7 +108,7 @@ class Type3E:
         """
         self._debug = debug
 
-    def connect(self, ip, port):
+    def connect(self, ip, port, use_tcp=True):
         """Connect to PLC
 
         Args:
@@ -119,7 +119,11 @@ class Type3E:
         """
         self._ip = ip
         self._port = port
-        self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if use_tcp:
+            self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        else:
+            # UDP
+            self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self._sock.settimeout(self.soc_timeout)
         self._sock.connect((ip, port))
         self._is_connected = True
